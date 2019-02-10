@@ -4,11 +4,13 @@ import numpy as np
 import pandas as pd
 
 from SentenceGetter import SentenceGetter
-from Indexer import buildWordIdx, inverseWordIdx, buildTagIdx, inverseTagIdx
+from WordIndex import WordIndex
+from Indexer import buildTagIdx, inverseTagIdx
 from Preprocessor import encodeSentences, padSentences, encodeTags, padTags, onehotEncodeTags
 from LstmCrfModel import LstmCrfModel
 
 # Hyperparams if GPU is available
+MAX_WORDS = 300000
 if tf.test.is_gpu_available():
     BATCH_SIZE = 512  # Number of examples used in each iteration
     EPOCHS = 5  # Number of passes through entire dataset
@@ -48,8 +50,8 @@ getter = SentenceGetter(data)
 #print('This is what a sentence looks like:')
 #print(sent)
 
-word2idx = buildWordIdx(words)
-idx2word = inverseWordIdx(word2idx)
+wordIndex = WordIndex()
+wordIndex.add(words)
 
 tag2idx = buildTagIdx(tags)
 idx2tag = inverseTagIdx(tag2idx)
@@ -60,8 +62,8 @@ idx2tag = inverseTagIdx(tag2idx)
 # Get all the sentences
 sentences = getter.sentences
 
-encodedSentences = encodeSentences(sentences, word2idx)
-encodedSentences = padSentences(encodedSentences, MAX_LEN, word2idx["PAD"])
+encodedSentences = encodeSentences(sentences, wordIndex)
+encodedSentences = padSentences(encodedSentences, MAX_LEN, wordIndex.getPadIdx())
 
 encodedTags = encodeTags(sentences, tag2idx)
 encodedTags = padTags(encodedTags, MAX_LEN, tag2idx["PAD"])
@@ -73,17 +75,16 @@ print('After processing, sample:', encodedSentences[0])
 print('After processing, labels:', encodedTags[0])
 
 
-model = LstmCrfModel(n_words, n_tags, EMBEDDING, MAX_LEN)
+model = LstmCrfModel(MAX_WORDS, n_tags, EMBEDDING, MAX_LEN)
 
 model.train(encodedSentences, encodedTags, BATCH_SIZE, EPOCHS)
 
-model.evaluate(words, idx2word, idx2tag)
+model.evaluate(wordIndex, idx2tag)
 
 import pickle
 
 # Saving Vocab
-with open('models/word_to_index.pickle', 'wb') as handle:
-    pickle.dump(word2idx, handle, protocol=pickle.HIGHEST_PROTOCOL)
+wordIndex.save('models/word_to_index.pickle')
  
 # Saving Vocab
 with open('models/tag_to_index.pickle', 'wb') as handle:

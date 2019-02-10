@@ -12,7 +12,7 @@ class LstmCrfModel(object):
     """Class representing an LSTM CRF Model for NER"""
     def __init__(self, nWords=0, nTags=0, embedding=0, maxLength=0):
         
-        if(nWords > 0 & nTags > 0):
+        if (nWords > 0 and nTags > 0):
             # Model definition
             input = Input(shape=(maxLength,))
             model = Embedding(input_dim=nWords+2, output_dim=embedding, # n_words + 2 (PAD & UNK)
@@ -35,7 +35,7 @@ class LstmCrfModel(object):
         self.history = self.model.fit(self.X_tr, np.array(self.y_tr), batch_size=batchSize, epochs=epochs,
                     validation_split=0.1, verbose=2)
 
-    def evaluate(self, words, idx2word, idx2tag):
+    def evaluate(self, wordIndex, idx2tag):
         pred_cat = self.model.predict(self.X_te)
         pred = np.argmax(pred_cat, axis=-1)
         y_te_true = np.argmax(self.y_te, -1)
@@ -58,7 +58,7 @@ class LstmCrfModel(object):
         print(30 * "=")
         for w, t, pred in zip(self.X_te[i], true, p[0]):
             if w != 0:
-                print("{:15}: {:5} {}".format(words[w-2], idx2tag[t], idx2tag[pred]))
+                print("{:15}: {:5} {}".format(wordIndex.getWord(w), idx2tag[t], idx2tag[pred]))
 
     def predict(self, input):
         p = self.model.predict(np.array([input[0]]))

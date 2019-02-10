@@ -1,5 +1,6 @@
 import nltk
 import pickle
+from WordIndex import WordIndex
 from Indexer import inverseTagIdx
 from Preprocessor import encodeSentences, padSentences
 from LstmCrfModel import restore
@@ -13,10 +14,10 @@ EPOCHS = 5
 MAX_LEN = 75
 EMBEDDING = 20
 
-sentence = "Donald Trump announced that he is invading Mexico."
+sentence = "Boyko Borisov is the prime minister of Bulgaria."
 
-with open('models/word_to_index.pickle', 'rb') as handle:
-    word2idx = pickle.load(handle)
+word2idx = WordIndex()
+word2idx.load('models/word_to_index.pickle')
  
 # Saving Vocab
 with open('models/tag_to_index.pickle', 'rb') as handle:
@@ -25,7 +26,7 @@ with open('models/tag_to_index.pickle', 'rb') as handle:
 
 words = nltk.pos_tag(nltk.word_tokenize(sentence))
 encodedInput = encodeSentences([words], word2idx)
-encodedInput = padSentences(encodedInput, MAX_LEN, word2idx["PAD"])
+encodedInput = padSentences(encodedInput, MAX_LEN, word2idx.getPadIdx())
 
 model = restore('models/lstm_crf_weights.h5')
 

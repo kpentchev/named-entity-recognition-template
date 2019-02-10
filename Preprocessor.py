@@ -3,7 +3,7 @@ from keras.utils import to_categorical
 
 def encodeSentences(sentences, word2idx):
     # Convert each sentence from list of Token to list of word_index
-    encoded = [[word2idx[w[0]] for w in s] for s in sentences]
+    encoded = [[word2idx.getIdx(w[0]) for w in s] for s in sentences]
     return encoded
 
 def padSentences(sentences, maxLength, pad):
