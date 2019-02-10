@@ -2,9 +2,9 @@ import pickle
 
 class WordIndex(object):
     """Class representing a dictionary"""
-    def __init__(self):
+    def __init__(self, unknown):
         self.pad = "PAD"
-        self.unknown = "UNK"
+        self.unknown = unknown
         self.dict = {}
         self.dict[self.unknown] = 1 # Unknown words
         self.dict[self.pad] = 0 # Padding
@@ -17,9 +17,9 @@ class WordIndex(object):
 
     def getIdx(self, word):
         if (not word in self.dict):
-            self.length += 1
             self.dict[word] = self.length
             self.inverse[self.length] = word
+            self.length += 1
         return self.dict[word]
 
     def getWord(self, idx):
@@ -34,10 +34,9 @@ class WordIndex(object):
     def add(self, words):
         for word in words:
             if (not word in self.dict):
-                self.length += 1
                 self.dict[word] = self.length
                 self.inverse[self.length] = word
-                
+                self.length += 1
 
     def save(self, file):
         with open(file, 'wb') as handle:
@@ -47,3 +46,4 @@ class WordIndex(object):
         with open(file, 'rb') as handle:
             self.dict = pickle.load(handle)
             self.length = len(self.dict.keys())
+            self.inverse = {i: w for w, i in self.dict.items()}

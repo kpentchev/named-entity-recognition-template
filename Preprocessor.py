@@ -6,20 +6,15 @@ def encodeSentences(sentences, word2idx):
     encoded = [[word2idx.getIdx(w[0]) for w in s] for s in sentences]
     return encoded
 
-def padSentences(sentences, maxLength, pad):
+def pad(sentences, maxLength, pad):
     # Padding each sentence to have the same lenght
     padded = pad_sequences(maxlen=maxLength, sequences=sentences, padding="post", value=pad)
     return padded
 
 def encodeTags(tags, tag2idx):
     # Convert Tag/Label to tag_index
-    encoded = [[tag2idx[w[2]] for w in s] for s in tags]
+    encoded = [[tag2idx.getIdx(w[2]) for w in s] for s in tags]
     return encoded
-
-def padTags(tags, maxLength, pad):
-    # Padding each sentence to have the same lenght
-    padded = pad_sequences(maxlen=maxLength, sequences=tags, padding="post", value=pad)
-    return padded
 
 def onehotEncodeTags(tags, nTags):
     # One-Hot encode

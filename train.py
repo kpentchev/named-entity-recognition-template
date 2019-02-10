@@ -6,7 +6,7 @@ import pandas as pd
 from SentenceGetter import SentenceGetter
 from WordIndex import WordIndex
 from Indexer import buildTagIdx, inverseTagIdx
-from Preprocessor import encodeSentences, padSentences, encodeTags, padTags, onehotEncodeTags
+from Preprocessor import encodeSentences, encodeTags, pad, onehotEncodeTags
 from LstmCrfModel import LstmCrfModel
 
 # Hyperparams if GPU is available
@@ -50,11 +50,11 @@ getter = SentenceGetter(data)
 #print('This is what a sentence looks like:')
 #print(sent)
 
-wordIndex = WordIndex()
+wordIndex = WordIndex("UNK")
 wordIndex.add(words)
 
-tag2idx = buildTagIdx(tags)
-idx2tag = inverseTagIdx(tag2idx)
+tagIndex = WordIndex("O")
+tagIndex.add(tags)
 
 #print("The word Obama is identified by the index: {}".format(word2idx["Obama"]))
 #print("The labels B-geo(which defines Geopraphical Enitities) is identified by the index: {}".format(tag2idx["B-geo"]))
@@ -63,10 +63,10 @@ idx2tag = inverseTagIdx(tag2idx)
 sentences = getter.sentences
 
 encodedSentences = encodeSentences(sentences, wordIndex)
-encodedSentences = padSentences(encodedSentences, MAX_LEN, wordIndex.getPadIdx())
+encodedSentences = pad(encodedSentences, MAX_LEN, wordIndex.getPadIdx())
 
-encodedTags = encodeTags(sentences, tag2idx)
-encodedTags = padTags(encodedTags, MAX_LEN, tag2idx["PAD"])
+encodedTags = encodeTags(sentences, tagIndex)
+encodedTags = pad(encodedTags, MAX_LEN, tagIndex.getPadIdx())
 encodedTags = onehotEncodeTags(encodedTags, n_tags)
 
 print('Raw Sample: ', ' '.join([w[0] for w in sentences[0]]))
@@ -79,16 +79,13 @@ model = LstmCrfModel(MAX_WORDS, n_tags, EMBEDDING, MAX_LEN)
 
 model.train(encodedSentences, encodedTags, BATCH_SIZE, EPOCHS)
 
-model.evaluate(wordIndex, idx2tag)
-
-import pickle
+model.evaluate(wordIndex, tagIndex)
 
 # Saving Vocab
 wordIndex.save('models/word_to_index.pickle')
  
 # Saving Vocab
-with open('models/tag_to_index.pickle', 'wb') as handle:
-    pickle.dump(tag2idx, handle, protocol=pickle.HIGHEST_PROTOCOL)
+tagIndex.save('models/tag_to_index.pickle')
     
 # Saving Model Weight
 model.save('models/lstm_crf_weights.h5')

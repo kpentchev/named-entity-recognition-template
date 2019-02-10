@@ -41,8 +41,8 @@ class LstmCrfModel(object):
         y_te_true = np.argmax(self.y_te, -1)
 
         # Convert the index to tag
-        pred_tag = [[idx2tag[i] for i in row] for row in pred]
-        y_te_true_tag = [[idx2tag[i] for i in row] for row in y_te_true] 
+        pred_tag = [[idx2tag.getWord(i) for i in row] for row in pred]
+        y_te_true_tag = [[idx2tag.getWord(i) for i in row] for row in y_te_true] 
 
         report = flat_classification_report(y_pred=pred_tag, y_true=y_te_true_tag)
         print(report)
@@ -58,7 +58,7 @@ class LstmCrfModel(object):
         print(30 * "=")
         for w, t, pred in zip(self.X_te[i], true, p[0]):
             if w != 0:
-                print("{:15}: {:5} {}".format(wordIndex.getWord(w), idx2tag[t], idx2tag[pred]))
+                print("{:15}: {:5} {}".format(wordIndex.getWord(w), idx2tag.getWord(t), idx2tag.getWord(pred)))
 
     def predict(self, input):
         p = self.model.predict(np.array([input[0]]))
