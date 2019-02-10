@@ -31,7 +31,7 @@ model = restore('models/lstm_crf_weights.h5')
 
 prediction = model.predict(encodedInput)
 
-# Visualization
+# Visualization asd
 print("{:15}||{}".format("Word", "Prediction"))
 print(30 * "=")
 for w, pred in zip(words, prediction[0]):
