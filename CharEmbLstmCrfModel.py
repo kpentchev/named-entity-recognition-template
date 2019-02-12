@@ -27,7 +27,7 @@ class CharEmbLstmCrfModel(object):
             embeddingChars = TimeDistributed(Embedding(input_dim=nChars + 2, output_dim=lenEmdWord, # n_chars + 2 (PAD & UNK)
                             input_length=maxLengthWord, mask_zero=True))(inputChars)
 
-            charEnc = TimeDistributed(LSTM(units=20, return_sequence=False, recurrent_dropout=0.5))(embeddingChars)
+            charEnc = TimeDistributed(LSTM(units=20, return_sequences=False, recurrent_dropout=0.5))(embeddingChars)
             embeddingCombined = SpatialDropout1D(0.3)(concatenate([embeddingWords, charEnc]))
 
             mainLstm = Bidirectional(LSTM(units=50, return_sequences=True,
@@ -44,12 +44,14 @@ class CharEmbLstmCrfModel(object):
 
     def train(self, xWords, xChars, y, batchSize, epochs, testSize=0.0):
         self.X_word_tr, self.X_word_te, self.y_tr, self.y_te = train_test_split(xWords, y, test_size=testSize, random_state=2018)
-        self.X_char_tr, self.X_char_te = train_test_split(xChars, y, test_size=testSize, random_state=2018)
+        self.X_char_tr, self.X_char_te, _, _ = train_test_split(xChars, y, test_size=testSize, random_state=2018)
 
         self.history = self.model.fit(
-                                    self.X_word_tr,
-                                    np.array(self.X_char_tr).reshape((len(self.X_char_tr), self.maxLengthSentence, self.maxLengthWord))],
-                                    np.array(self.y_tr).reshape(len(self.y_tr), self.maxLengthSentence, 1),
+                                    [
+                                        self.X_word_tr,
+                                        np.array(self.X_char_tr).reshape((len(self.X_char_tr), self.maxLengthSentence, self.maxLengthWord))
+                                    ],
+                                    np.array(self.y_tr),
                                     batch_size=batchSize, 
                                     epochs=epochs,
                                     validation_split=testSize,
@@ -97,8 +99,8 @@ def restore(file):
     instance = CharEmbLstmCrfModel()
     with open(file + '.params', 'rb') as handle:
         params = pickle.load(handle)
-        self.maxLengthSentence = params[0]
-        self.maxLengthWord = params[1]
+        instance.maxLengthSentence = params[0]
+        instance.maxLengthWord = params[1]
     instance.model = load_model(file, custom_objects={
         'CRF': CRF, 
         'crf_loss': crf_loss, 
