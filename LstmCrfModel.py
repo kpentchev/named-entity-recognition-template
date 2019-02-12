@@ -28,12 +28,12 @@ class LstmCrfModel(object):
 
             self.model.summary()
 
-    def train(self, X, y, batchSize, epochs):
-        self.X_tr, self.X_te, self.y_tr, self.y_te = train_test_split(X, y, test_size=0.1)
+    def train(self, X, y, batchSize, epochs, testSize=0.0):
+        self.X_tr, self.X_te, self.y_tr, self.y_te = train_test_split(X, y, test_size=testSize)
         self.X_tr.shape, self.X_te.shape, np.array(self.y_tr).shape, np.array(self.y_te).shape
 
         self.history = self.model.fit(self.X_tr, np.array(self.y_tr), batch_size=batchSize, epochs=epochs,
-                    validation_split=0.1, verbose=2)
+                    validation_split=testSize, verbose=2)
 
     def evaluate(self, wordIndex, idx2tag):
         pred_cat = self.model.predict(self.X_te)

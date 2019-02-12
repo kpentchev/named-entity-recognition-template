@@ -10,7 +10,7 @@ from Preprocessor import encodeSentences, encodeTags, pad, onehotEncodeTags
 from LstmCrfModel import LstmCrfModel
 
 # Hyperparams if GPU is available
-MAX_WORDS = 300000
+MAX_WORDS = 40000
 if tf.test.is_gpu_available():
     BATCH_SIZE = 512  # Number of examples used in each iteration
     EPOCHS = 5  # Number of passes through entire dataset
@@ -21,13 +21,13 @@ if tf.test.is_gpu_available():
 # Hyperparams for CPU training
 else:
     BATCH_SIZE = 32
-    EPOCHS = 5
+    EPOCHS = 10
     MAX_LEN = 75
     EMBEDDING = 20
 
 
-data = pd.read_csv("/home/kpentchev/data/floyd/ner_dataset.csv", encoding="latin1")
-#data = pd.read_csv("/home/kpentchev/data/floyd/teo_tagged_3.csv", encoding="utf-8", delimiter='\t')
+#data = pd.read_csv("/home/kpentchev/data/floyd/ner_dataset.csv", encoding="latin1", delimiter='\t')
+data = pd.read_csv("/home/kpentchev/data/floyd/ner_2019_02_11_fixed.csv", encoding="utf-8", delimiter='\t')
 data = data.fillna(method="ffill")
 
 print("Number of sentences: ", len(data.groupby(['Sentence #'])))
@@ -77,7 +77,7 @@ print('After processing, labels:', encodedTags[0])
 
 model = LstmCrfModel(MAX_WORDS, n_tags, EMBEDDING, MAX_LEN)
 
-model.train(encodedSentences, encodedTags, BATCH_SIZE, EPOCHS)
+model.train(encodedSentences, encodedTags, BATCH_SIZE, EPOCHS, 0.1)
 
 model.evaluate(wordIndex, tagIndex)
 
