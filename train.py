@@ -6,7 +6,7 @@ import pandas as pd
 from SentenceGetter import SentenceGetter
 from WordIndex import WordIndex
 from Indexer import buildTagIdx, inverseTagIdx
-from Preprocessor import encodeSentences, encodeTags, pad, onehotEncodeTags
+from Preprocessor import encodeSentences, encodeChars, encodeTags, pad, onehotEncodeTags
 from LstmCrfModel import LstmCrfModel
 from CharEmbLstmCrfModel import CharEmbLstmCrfModel
 
@@ -23,15 +23,15 @@ if tf.test.is_gpu_available():
 # Hyperparams for CPU training
 else:
     BATCH_SIZE = 32
-    EPOCHS = 10
+    EPOCHS = 15
     MAX_LEN = 75
     MAX_LEN_CHARS = 10
     EMBEDDING = 20
     EMBEDDING_WORD = 10
 
 
-data = pd.read_csv("/Users/kpentchev/Downloads/ner_dataset.csv", encoding="latin1")
-#data = pd.read_csv("/Users/kpentchev/git/tf_ner/teo_tagged_6.csv", encoding="utf-8", delimiter='\t')
+#data = pd.read_csv("/Users/kpentchev/Downloads/ner_dataset.csv", encoding="latin1")
+data = pd.read_csv("/Users/kpentchev/Downloads/ner_2019_02_11_fixed.csv", encoding="utf-8", delimiter='\t')
 data = data.fillna(method="ffill")
 
 print("Number of sentences: ", len(data.groupby(['Sentence #'])))
@@ -64,6 +64,9 @@ chars = set([w_i for w in words for w_i in w])
 n_chars = len(chars)
 print(chars)
 
+charIndex = WordIndex("UNK")
+charIndex.add(chars)
+
 #print("The word Obama is identified by the index: {}".format(word2idx["Obama"]))
 #print("The labels B-geo(which defines Geopraphical Enitities) is identified by the index: {}".format(tag2idx["B-geo"]))
 
@@ -77,22 +80,7 @@ encodedTags = encodeTags(sentences, tagIndex)
 encodedTags = pad(encodedTags, MAX_LEN, tagIndex.getPadIdx())
 encodedTags = onehotEncodeTags(encodedTags, n_tags)
 
-char2idx = {c: i + 2 for i, c in enumerate(chars)}
-char2idx["UNK"] = 1
-char2idx["PAD"] = 0
-
-encodedChars = []
-for sentence in sentences:
-    sent_seq = []
-    for i in range(MAX_LEN):
-        word_seq = []
-        for j in range(MAX_LEN_CHARS):
-            try:
-                word_seq.append(char2idx.get(sentence[i][0][j]))
-            except:
-                word_seq.append(char2idx.get("PAD"))
-        sent_seq.append(word_seq)
-    encodedChars.append(np.array(sent_seq))
+encodedChars = encodeChars(sentences, charIndex, MAX_LEN, MAX_LEN_CHARS)
 
 print('n encoded sentences: {}'.format(len(encodedSentences)))
 print('n encoded chars: {}'.format(len(encodedChars)))
@@ -101,17 +89,22 @@ model = CharEmbLstmCrfModel(MAX_WORDS, n_chars, n_tags, EMBEDDING, EMBEDDING_WOR
 
 model.train(encodedSentences, encodedChars, encodedTags, BATCH_SIZE, EPOCHS, 0.1)
 
+model.evaluate(wordIndex, tagIndex)
+
 #model = LstmCrfModel(MAX_WORDS, n_tags, EMBEDDING, MAX_LEN)
 
 #model.train(encodedSentences, encodedTags, BATCH_SIZE, EPOCHS, 0.1)
 
 #model.evaluate(wordIndex, tagIndex)
 
-# Saving Vocab
+# Saving word index
 wordIndex.save('models/word_to_index.pickle')
  
-# Saving Vocab
+# Saving tag index
 tagIndex.save('models/tag_to_index.pickle')
+
+# Saving character index
+charIndex.save('models/char_to_index.pickle')
     
-# Saving Model Weight
+# Saving Model
 model.save('models/lstm_crf_weights.h5')

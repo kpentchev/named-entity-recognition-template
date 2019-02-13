@@ -27,18 +27,18 @@ class CharEmbLstmCrfModel(object):
             embeddingChars = TimeDistributed(Embedding(input_dim=nChars + 2, output_dim=lenEmdWord, # n_chars + 2 (PAD & UNK)
                             input_length=maxLengthWord, mask_zero=True))(inputChars)
 
-            charEnc = TimeDistributed(LSTM(units=20, return_sequences=False, recurrent_dropout=0.5))(embeddingChars)
+            charEnc = TimeDistributed(LSTM(units=20, return_sequences=False, recurrent_dropout=0.3))(embeddingChars)
             embeddingCombined = SpatialDropout1D(0.3)(concatenate([embeddingWords, charEnc]))
 
             mainLstm = Bidirectional(LSTM(units=50, return_sequences=True,
                                     recurrent_dropout=0.6))(embeddingCombined)  # variational biLSTM
             
-            nn = TimeDistributed(Dense(50, activation="softmax"))(mainLstm)  # a dense layer as suggested by neuralNer
+            nn = TimeDistributed(Dense(50, activation="relu"))(mainLstm)  # a dense layer as suggested by neuralNer
             crf = CRF(nTags+1)  # CRF layer, n_tags+1(PAD)
             out = crf(nn)  # output
 
             self.model = Model([inputWords, inputChars], out)
-            self.model.compile(optimizer="rmsprop", loss=crf_loss, metrics=[crf_viterbi_accuracy]) #try adam optimizer
+            self.model.compile(optimizer="adam", loss=crf_loss, metrics=[crf_viterbi_accuracy]) #try adam optimizer
 
             self.model.summary()
 
@@ -71,6 +71,7 @@ class CharEmbLstmCrfModel(object):
         report = flat_classification_report(y_pred=pred_tag, y_true=y_te_true_tag)
         print(report)
 
+        '''
         i = np.random.randint(0,self.X_word_te.shape[0]) # choose a random number between 0 and len(X_te)
         p = self.model.predict(np.array([self.X_word_te[i]]))
         p = np.argmax(p, axis=-1)
@@ -83,9 +84,13 @@ class CharEmbLstmCrfModel(object):
         for w, t, pred in zip(self.X_word_te[i], true, p[0]):
             if w != 0:
                 print("{:15}: {:5} {}".format(wordIndex.getWord(w), idx2tag.getWord(t), idx2tag.getWord(pred)))
+        '''
 
-    def predict(self, input):
-        p = self.model.predict(np.array([input[0]]))
+    def predict(self, inputWords, inputChars):
+        p = self.model.predict([
+                            np.array([inputWords[0]]),
+                            np.array(inputChars[0]).reshape(1, self.maxLengthSentence, self.maxLengthWord)
+                        ])
         p = np.argmax(p, axis=-1)
         return p
 

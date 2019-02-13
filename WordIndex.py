@@ -31,6 +31,9 @@ class WordIndex(object):
     def getPad(self):
         return self.pad
 
+    def getLength(self):
+        return self.length
+
     def add(self, words):
         for word in words:
             if (not word in self.dict):
