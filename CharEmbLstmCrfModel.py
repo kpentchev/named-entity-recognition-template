@@ -27,11 +27,11 @@ class CharEmbLstmCrfModel(object):
             embeddingChars = TimeDistributed(Embedding(input_dim=nChars + 2, output_dim=lenEmdWord, # n_chars + 2 (PAD & UNK)
                             input_length=maxLengthWord, mask_zero=True))(inputChars)
 
-            charEnc = TimeDistributed(Bidirectional(LSTM(units=20, return_sequences=False, recurrent_dropout=0.3)))(embeddingChars)
+            charEnc = TimeDistributed(Bidirectional(LSTM(units=20, return_sequences=False, recurrent_dropout=0.5)))(embeddingChars)
             embeddingCombined = SpatialDropout1D(0.3)(concatenate([embeddingWords, charEnc]))
 
             mainLstm = Bidirectional(LSTM(units=50, return_sequences=True,
-                                    recurrent_dropout=0.6))(embeddingCombined)  # variational biLSTM
+                                    recurrent_dropout=0.5))(embeddingCombined)  # variational biLSTM
             
             nn = TimeDistributed(Dense(50, activation="relu"))(mainLstm)  # a dense layer as suggested by neuralNer
             crf = CRF(nTags+1)  # CRF layer, n_tags+1(PAD)

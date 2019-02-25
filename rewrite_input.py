@@ -1,10 +1,12 @@
 import csv
 
-with open('/home/kpentchev/data/floyd/ner_2019_02_15.csv', encoding='utf-8') as csv_read:
+with open('/Users/kpentchev/data/ner_2019_02_15_fixed.csv', encoding='utf-8') as csv_read:
+#with open('/home/kpentchev/data/floyd/ner_2019_02_15.csv', encoding='utf-8') as csv_read:
     csv_reader = csv.reader(csv_read, delimiter='\t')
     line_count = 0
     sentence_count = 1
-    with open('/home/kpentchev/data/floyd/ner_2019_02_15_fixed.csv', encoding='utf-8', mode='w') as csv_write:
+    with open('/Users/kpentchev/data/ner_2019_02_18_fixed.csv', encoding='utf-8', mode='w') as csv_write:
+    #with open('/home/kpentchev/data/floyd/ner_2019_02_15_fixed.csv', encoding='utf-8', mode='w') as csv_write:
         csv_writer = csv.writer(csv_write, delimiter='\t')
         for row in csv_reader:
             if line_count == 0:

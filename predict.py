@@ -13,7 +13,7 @@ nltk.download('averaged_perceptron_tagger')
 BATCH_SIZE = 32
 EPOCHS = 5
 MAX_LEN = 75
-MAX_LEN_CHARS = 10
+MAX_LEN_CHARS = 15
 EMBEDDING = 20
 
 #sentence = "Valve announced a partnership deal with BMW for their Dota 2 The International event."
@@ -31,8 +31,9 @@ charIndex.load('models/char_to_index.pickle')
 
 model = restore('models/lstm_crf_weights.h5')
 
+#text = 'Starladder will present the 15th Counter-Strike: Global Offensive (CS:GO) Major, considered to be one of the most prestigious regular events in the game’s calendar. As well as being a first for the Ukraine-based esports company, this will be the first Major to take place in Berlin, from Sept. 5-8 at the Mercedes-Benz Arena.'
 #text = 'Dota 2 developer Psyonix and Turner Sports’ ELEAGUE esports brand have announced a multi-faceted business, event, and broadcasting deal around the Dota 2 Championship Series (RLCS) and collegiate esports. ELEAGUE will produce a multi-part feature series around the upcoming RLCS Season 7, which begins its regular season in April, as well as the future Season 8 to follow. The series will cover big moments and behind-the-scenes stories from each season and will debut on the TBS cable network “later in 2019,” according to a release. Additionally, Turner Sports’ ad sales team will oversee all advertising and sponsorships for those two RLCS seasons. Furthermore, ELEAGUE and Psyonix will host a Collegiate Dota 2 (CRL) Spring Invitational event at the NCAA Final Four Fan Fest presented by Capital One, which will be held in Minneapolis from April 5-8. The top four teams from the CRL Spring Season will participate in the exhibition tournament.'
-text = 'ESL and Supercell reveal $1M Clash of Clans World Championship'
+text = 'ESL and Supercell reveal $ 1M Clash of Clans World Championship'
 
 sentences = nltk.sent_tokenize(text)
 
@@ -49,7 +50,8 @@ for sentence in sentences:
     prediction = model.predict(encodedInput, encodedChars)
 
     # Visualization asd
-    for w, pred in zip(words, prediction[0]):
-        print("{:15}: {:5}".format(w[0], tagIndex.getWord(pred)))
+    for w, pred1 in zip(words, prediction[0]):
+        print("{:15}: {:5}".format(w[0], tagIndex.getWord(pred1)))
+
 
 wordIndex.save('models/word_to_index.pickle')
