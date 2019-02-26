@@ -23,16 +23,16 @@ if tf.test.is_gpu_available():
 # Hyperparams for CPU training
 else:
     BATCH_SIZE = 32
-    EPOCHS = 7
+    EPOCHS = 8
     MAX_LEN = 75
     MAX_LEN_CHARS = 15
-    EMBEDDING = 20
+    EMBEDDING = 40
     EMBEDDING_WORD = 15
 
 
 #data = pd.read_csv("/Users/kpentchev/Downloads/ner_dataset.csv", encoding="latin1")
-#data = pd.read_csv("/Users/kpentchev/data/ner_2019_02_18_fixed.csv", encoding="utf-8", delimiter='\t')
-data = pd.read_csv("/home/kpentchev/data/floyd/ner_2019_02_25_fixed.csv", encoding="utf-8", delimiter='\t')
+data = pd.read_csv("/Users/kpentchev/data/ner_2019_02_25_fixed.csv", encoding="utf-8", delimiter='\t')
+#data = pd.read_csv("/home/kpentchev/data/floyd/ner_2019_02_25_fixed.csv", encoding="utf-8", delimiter='\t')
 data = data.fillna(method="ffill")
 
 print("Number of sentences: ", len(data.groupby(['Sentence #'])))

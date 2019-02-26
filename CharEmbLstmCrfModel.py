@@ -27,7 +27,7 @@ class CharEmbLstmCrfModel(object):
             embeddingChars = TimeDistributed(Embedding(input_dim=nChars + 2, output_dim=lenEmdWord, # n_chars + 2 (PAD & UNK)
                             input_length=maxLengthWord, mask_zero=True))(inputChars)
 
-            charEnc = TimeDistributed(Bidirectional(LSTM(units=20, return_sequences=False, recurrent_dropout=0.6)))(embeddingChars)
+            charEnc = TimeDistributed(Bidirectional(LSTM(units=30, return_sequences=False, recurrent_dropout=0.6)))(embeddingChars)
             embeddingCombined = SpatialDropout1D(0.3)(concatenate([embeddingWords, charEnc]))
 
             mainLstm = Bidirectional(LSTM(units=50, return_sequences=True,
