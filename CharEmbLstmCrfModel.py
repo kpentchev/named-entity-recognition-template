@@ -38,7 +38,7 @@ class CharEmbLstmCrfModel(object):
             out = crf(nn)  # output
 
             self.model = Model([inputWords, inputChars], out)
-            self.model.compile(optimizer="adam", loss=crf_loss, metrics=[crf_viterbi_accuracy]) #try adam optimizer
+            self.model.compile(optimizer="nadam", loss=crf_loss, metrics=[crf_viterbi_accuracy]) #try adam optimizer
 
             self.model.summary()
 

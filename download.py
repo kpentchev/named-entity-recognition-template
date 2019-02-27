@@ -20,10 +20,11 @@ urlpages = [
     #'https://esportsobserver.com/globe-telecom-mineski-team-liyab/',
     #'https://esportsobserver.com/blizzard-owl-coca-cola/',
     #'https://esportsobserver.com/newzoo-ceo-esports-phase-two/'
-    'https://esportsobserver.com/psyonix-eleague-rocket-league/',
-    'https://esportsobserver.com/esl-paysafecard-through-2019/',
-    'https://esportsobserver.com/hyperx-pittsburgh-knights-partner/',
-    'https://esportsobserver.com/psg-mobile-legends-team/'
+    #'https://esportsobserver.com/psyonix-eleague-rocket-league/',
+    #'https://esportsobserver.com/esl-paysafecard-through-2019/',
+    #'https://esportsobserver.com/hyperx-pittsburgh-knights-partner/',
+    #'https://esportsobserver.com/psg-mobile-legends-team/'
+    'https://www.forbes.com/sites/mattperez/2019/02/26/g2-esports-raises-17-3-million-in-series-a-funding'
     ]
 
 rows = []
