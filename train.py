@@ -27,7 +27,7 @@ else:
     MAX_LEN = 75
     MAX_LEN_CHARS = 15
     EMBEDDING = 40
-    EMBEDDING_WORD = 15
+    EMBEDDING_WORD = 20
 
 
 #data = pd.read_csv("/Users/kpentchev/Downloads/ner_dataset.csv", encoding="latin1")

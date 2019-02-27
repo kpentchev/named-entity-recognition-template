@@ -34,8 +34,9 @@ for urlpage in urlpages:
     soup = BeautifulSoup(page, 'html.parser',)
     soup.prettify('UTF-8')
     #print(soup)
-
-    text = ' '.join( x.getText() for x in soup.find('div', {'class': 'entry-content'}).find_all('p'))
+    
+    text = ' '.join( x.getText() for x in soup.find('div', {'class': 'article-container'}).find_all('p'))
+    #text = ' '.join( x.getText() for x in soup.find('div', {'class': 'entry-content'}).find_all('p'))
     text = text.replace('“', '"').replace('”', '"').replace("‘", "'").replace("’", "'").replace("…", "...").replace("–", "-")
     #print(text)
 

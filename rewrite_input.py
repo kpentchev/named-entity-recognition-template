@@ -1,6 +1,6 @@
 import csv
 
-with open('/Users/kpentchev/data/ner_2019_02_15_fixed.csv', encoding='utf-8') as csv_read:
+with open('/Users/kpentchev/data/ner_2019_02_27.csv', encoding='utf-8') as csv_read:
 #with open('/home/kpentchev/data/floyd/ner_2019_02_25_fixed.csv', encoding='utf-8') as csv_read:
     csv_reader = csv.reader(csv_read, delimiter='\t')
     line_count = 0
