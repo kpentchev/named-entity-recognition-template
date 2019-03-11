@@ -3,13 +3,19 @@ import keras as ks
 import numpy as np 
 import pandas as pd
 
+import nltk
+from nltk.stem.snowball import SnowballStemmer
+
 from SentenceGetter import SentenceGetter
 from WordIndex import WordIndex
 from Indexer import buildTagIdx, inverseTagIdx
-from Preprocessor import encodeSentences, encodeChars, encodeTags, pad, onehotEncodeTags
+from Preprocessor import encodeSentences, encodeStems, encodeChars, encodeTags, pad, onehotEncodeTags
 from LstmCrfModel import LstmCrfModel
 from CharEmbLstmCrfModel import CharEmbLstmCrfModel
+from StemCharEmbLstmCrfModel import StemCharEmbLstmCrfModel
 
+
+nltk.download('stopwords')
 # Hyperparams if GPU is available
 MAX_WORDS = 40000
 if tf.test.is_gpu_available():
@@ -31,8 +37,8 @@ else:
 
 
 #data = pd.read_csv("/Users/kpentchev/Downloads/ner_dataset.csv", encoding="latin1")
-data = pd.read_csv("/Users/kpentchev/data/ner_2019_02_27_fixed.csv", encoding="utf-8", delimiter='\t')
-#data = pd.read_csv("/home/kpentchev/data/floyd/ner_2019_02_25_fixed.csv", encoding="utf-8", delimiter='\t')
+#data = pd.read_csv("/Users/kpentchev/data/ner_2019_02_27_fixed.csv", encoding="utf-8", delimiter='\t')
+data = pd.read_csv("/home/kpentchev/data/floyd/ner_2019_02_27_fixed.csv", encoding="utf-8", delimiter='\t')
 data = data.fillna(method="ffill")
 
 print("Number of sentences: ", len(data.groupby(['Sentence #'])))
@@ -40,6 +46,9 @@ print("Number of sentences: ", len(data.groupby(['Sentence #'])))
 words = list(set(data["Word"].values))
 n_words = len(words)
 print("Number of words in the dataset: ", n_words)
+
+stemmer = SnowballStemmer("english", ignore_stopwords=True)
+stems = list(set(stemmer.stem(word) for word in words))
 
 tags = list(set(data["Tag"].values))
 print("Tags:", tags)
@@ -57,6 +66,9 @@ getter = SentenceGetter(data)
 
 wordIndex = WordIndex("UNK")
 wordIndex.add(words)
+
+stemIndex = WordIndex("UNK")
+stemIndex.add(stems)
 
 tagIndex = WordIndex("O")
 tagIndex.add(tags)
@@ -77,6 +89,9 @@ sentences = getter.sentences
 encodedSentences = encodeSentences(sentences, wordIndex)
 encodedSentences = pad(encodedSentences, MAX_LEN, wordIndex.getPadIdx())
 
+encodedStems = encodeStems(sentences, stemIndex, stemmer)
+encodedStems = pad(encodedStems, MAX_LEN, stemIndex.getPadIdx())
+
 encodedTags = encodeTags(sentences, tagIndex)
 encodedTags = pad(encodedTags, MAX_LEN, tagIndex.getPadIdx())
 encodedTags = onehotEncodeTags(encodedTags, n_tags)
@@ -86,9 +101,10 @@ encodedChars = encodeChars(sentences, charIndex, MAX_LEN, MAX_LEN_CHARS)
 print('n encoded sentences: {}'.format(len(encodedSentences)))
 print('n encoded chars: {}'.format(len(encodedChars)))
 
-model = CharEmbLstmCrfModel(MAX_WORDS, n_chars, n_tags, EMBEDDING, EMBEDDING_WORD, MAX_LEN, MAX_LEN_CHARS)
+#model = CharEmbLstmCrfModel(MAX_WORDS, n_chars, n_tags, EMBEDDING, EMBEDDING_WORD, MAX_LEN, MAX_LEN_CHARS)
+model = StemCharEmbLstmCrfModel(MAX_WORDS, n_chars, n_tags, EMBEDDING, EMBEDDING_WORD, MAX_LEN, MAX_LEN_CHARS)
 
-model.train(encodedSentences, encodedChars, encodedTags, BATCH_SIZE, EPOCHS, 0.1)
+model.train(encodedSentences, encodedStems, encodedChars, encodedTags, BATCH_SIZE, EPOCHS, 0.1)
 
 model.evaluate(wordIndex, tagIndex)
 

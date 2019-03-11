@@ -7,6 +7,11 @@ def encodeSentences(sentences, word2idx):
     encoded = [[word2idx.getIdx(w[0]) for w in s] for s in sentences]
     return encoded
 
+def encodeStems(sentences, stem2idx, stemmer):
+    # Convert each sentence from list of Token to list of word_index
+    encoded = [[stem2idx.getIdx(stemmer.stem(w[0])) for w in s] for s in sentences]
+    return encoded
+
 def encodeChars(sentences, charIndex, maxLengthSentence, maxLengthWord):
     encodedChars = []
     for sentence in sentences:

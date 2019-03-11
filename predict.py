@@ -1,4 +1,5 @@
 import nltk
+from nltk.stem.snowball import SnowballStemmer
 import pickle
 from WordIndex import WordIndex
 from Indexer import inverseTagIdx
@@ -8,6 +9,7 @@ from CharEmbLstmCrfModel import restore
 
 nltk.download('punkt')
 nltk.download('averaged_perceptron_tagger')
+nltk.download('stopwords')
 
 
 BATCH_SIZE = 32
@@ -18,7 +20,7 @@ EMBEDDING = 20
 
 #sentence = "Valve announced a partnership deal with BMW for their Dota 2 The International event."
 
-
+stemmer = SnowballStemmer("english", ignore_stopwords=True)
 
 wordIndex = WordIndex("UNK")
 wordIndex.load('models/word_to_index.pickle')
