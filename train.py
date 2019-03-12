@@ -37,8 +37,8 @@ else:
 
 
 #data = pd.read_csv("/Users/kpentchev/Downloads/ner_dataset.csv", encoding="latin1")
-#data = pd.read_csv("/Users/kpentchev/data/ner_2019_02_27_fixed.csv", encoding="utf-8", delimiter='\t')
-data = pd.read_csv("/home/kpentchev/data/floyd/ner_2019_02_27_fixed.csv", encoding="utf-8", delimiter='\t')
+data = pd.read_csv("/Users/kpentchev/data/ner_2019_03_11_no_med.csv", encoding="utf-8", delimiter='\t')
+#data = pd.read_csv("/home/kpentchev/data/floyd/ner_2019_02_27_fixed.csv", encoding="utf-8", delimiter='\t')
 data = data.fillna(method="ffill")
 
 print("Number of sentences: ", len(data.groupby(['Sentence #'])))
@@ -116,7 +116,10 @@ model.evaluate(wordIndex, tagIndex)
 
 # Saving word index
 wordIndex.save('models/word_to_index.pickle')
- 
+
+# Saving tag index
+stemIndex.save('models/stem_to_index.pickle')
+
 # Saving tag index
 tagIndex.save('models/tag_to_index.pickle')
 
@@ -124,4 +127,4 @@ tagIndex.save('models/tag_to_index.pickle')
 charIndex.save('models/char_to_index.pickle')
     
 # Saving Model
-model.save('models/lstm_crf_weights.h5')
+model.save('models/stem_char_lstm_crf.h5')
