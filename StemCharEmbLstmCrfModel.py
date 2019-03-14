@@ -9,6 +9,8 @@ from keras_contrib.losses import crf_loss
 from keras_contrib.metrics import crf_viterbi_accuracy
 from keras.models import load_model
 
+from AttentionWithContext import AttentionWithContext
+
 class StemCharEmbLstmCrfModel(object):
     """Class representing an Char Embedding + LSTM CRF Model for NER"""
     def __init__(self, nWords=0, nChars=0, nTags=0, lenEmdSent=0, lenEmdWord=0, maxLengthSentence=0, maxLengthWord=0):
@@ -38,12 +40,16 @@ class StemCharEmbLstmCrfModel(object):
 
             mainLstmOne = Bidirectional(LSTM(units=50, return_sequences=True,
                                     recurrent_dropout=0.4))(embeddingCombined)  # variational biLSTM
-            mainLstmTwo = Bidirectional(LSTM(units=50, return_sequences=True,
-                                    recurrent_dropout=0.25))(mainLstmOne)  # variational biLSTM
-            mainLstmThree = Bidirectional(LSTM(units=50, return_sequences=True,
-                                    recurrent_dropout=0.25))(mainLstmTwo)  # variational biLSTM
-            
-            nn = TimeDistributed(Dense(50, activation="relu"))(mainLstmThree)  # a dense layer as suggested by neuralNer
+            #mainLstmTwo = Bidirectional(LSTM(units=50, return_sequences=True, activation='softmax',
+            #                        recurrent_dropout=0.25))(mainLstmOne)  # variational biLSTM
+            #mainLstmThree = Bidirectional(LSTM(units=50, return_sequences=True, activation='softmax',
+            #                        recurrent_dropout=0.25))(mainLstmTwo)  # variational biLSTM
+
+            print(mainLstmOne.shape)
+            attention = AttentionWithContext()(mainLstmOne)
+            print(attention.shape)
+
+            nn = TimeDistributed(Dense(50, activation="relu"))(attention)  # a dense layer as suggested by neuralNer
             crf = CRF(nTags+1)  # CRF layer, n_tags+1(PAD)
             out = crf(nn)  # output
 

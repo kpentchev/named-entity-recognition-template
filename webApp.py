@@ -30,11 +30,14 @@ def predict():
             if tag != "O":
                 idx = text.find(w, last_idx)
                 last_idx = idx + len(w)
-                data["predictions"].append({
-                    "type": tag,
-                    "start": idx,
-                    "end": last_idx
-                })
+                if (tag.startswith("B")):
+                    data["predictions"].append({
+                        "type": tag.split('-')[1],
+                        "start": idx,
+                        "end": last_idx
+                    })
+                else :
+                    data["predictions"][-1]["end"] = last_idx
 
         # indicate that the request was a success
         data["success"] = True

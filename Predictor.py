@@ -18,18 +18,18 @@ class Predictor(object):
         self.stemmer = SnowballStemmer("english", ignore_stopwords=True)
 
         self.wordIndex = WordIndex("UNK")
-        self.wordIndex.load('models/word_to_index.pickle')
+        self.wordIndex.load('models_active/word_to_index.pickle')
 
         self.tagIndex = WordIndex("O")
-        self.tagIndex.load('models/tag_to_index.pickle')
+        self.tagIndex.load('models_active/tag_to_index.pickle')
 
         self.charIndex = WordIndex("UNK")
-        self.charIndex.load('models/char_to_index.pickle')
+        self.charIndex.load('models_active/char_to_index.pickle')
 
         self.stemIndex = WordIndex("UNK")
-        self.stemIndex.load('models/stem_to_index.pickle')
+        self.stemIndex.load('models_active/stem_to_index.pickle')
 
-        self.model = restore('models/stem_char_lstm_crf.h5')
+        self.model = restore('models_active/stem_char_lstm_crf.h5')
         self.graph = tf.get_default_graph()
 
     def predict(self, text):
