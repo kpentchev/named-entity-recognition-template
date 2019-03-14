@@ -1,7 +1,9 @@
 import flask
+from flask_cors import CORS
 from Predictor import Predictor
 
 app = flask.Flask(__name__)
+CORS(app)
 
 predictor = None
     
@@ -25,13 +27,14 @@ def predict():
         predictions = predictor.predict(text)
         
         for w, tag in predictions:
-            idx = text.find(w)
-            last_idx = idx + len(w)
-            data["predictions"].append({
-                "type": tag,
-                "start": idx,
-                "end": last_idx
-            })
+            if tag != "O":
+                idx = text.find(w, last_idx)
+                last_idx = idx + len(w)
+                data["predictions"].append({
+                    "type": tag,
+                    "start": idx,
+                    "end": last_idx
+                })
 
         # indicate that the request was a success
         data["success"] = True
