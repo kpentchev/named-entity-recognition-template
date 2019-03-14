@@ -1,6 +1,17 @@
 import numpy as np
+import re
 from keras.preprocessing.sequence import pad_sequences
 from keras.utils import to_categorical
+
+whitespaceMatch = re.compile(r'\s+')
+numberStem = '###NUM###'
+
+def isNumber(text):
+    cleanText = text.replace('.','',1).replace('"', '')
+    if cleanText.startswith('-'):
+        cleanText = cleanText[1:]
+    cleanText = whitespaceMatch.sub('', cleanText)
+    return cleanText.isdigit()
 
 def encodeSentences(sentences, word2idx):
     # Convert each sentence from list of Token to list of word_index
@@ -9,7 +20,7 @@ def encodeSentences(sentences, word2idx):
 
 def encodeStems(sentences, stem2idx, stemmer):
     # Convert each sentence from list of Token to list of word_index
-    encoded = [[stem2idx.getIdx(stemmer.stem(w[0])) for w in s] for s in sentences]
+    encoded = [[stem2idx.getIdx(numberStem if isNumber(w[0]) else stemmer.stem(w[0])) for w in s] for s in sentences]
     return encoded
 
 def encodeChars(sentences, charIndex, maxLengthSentence, maxLengthWord):

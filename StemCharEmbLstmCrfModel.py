@@ -26,18 +26,24 @@ class StemCharEmbLstmCrfModel(object):
             inputStems = Input(shape=(maxLengthSentence,))
             embeddingStems = Embedding(input_dim=nWords+2, output_dim=lenEmdSent, # n_words + 2 (PAD & UNK)
                             input_length=maxLengthSentence, mask_zero=True)(inputStems)  # default: 20-dim embedding
+            #stemsLstm = Bidirectional(LSTM(units=50, return_sequences=True,
+            #                        recurrent_dropout=0.5))(embeddingStems)
 
             inputChars = Input(shape=(maxLengthSentence, maxLengthWord,))
             embeddingChars = TimeDistributed(Embedding(input_dim=nChars + 2, output_dim=lenEmdWord, # n_chars + 2 (PAD & UNK)
                             input_length=maxLengthWord, mask_zero=True))(inputChars)
-
-            charEnc = TimeDistributed(Bidirectional(LSTM(units=30, return_sequences=False, recurrent_dropout=0.6)))(embeddingChars)
-            embeddingCombined = SpatialDropout1D(0.3)(concatenate([embeddingWords, embeddingStems, charEnc]))
-
-            mainLstm = Bidirectional(LSTM(units=50, return_sequences=True,
-                                    recurrent_dropout=0.5))(embeddingCombined)  # variational biLSTM
+            charLstm = TimeDistributed(Bidirectional(LSTM(units=30, return_sequences=False, recurrent_dropout=0.6)))(embeddingChars)
             
-            nn = TimeDistributed(Dense(50, activation="relu"))(mainLstm)  # a dense layer as suggested by neuralNer
+            embeddingCombined = SpatialDropout1D(0.3)(concatenate([embeddingWords, embeddingStems, charLstm]))
+
+            mainLstmOne = Bidirectional(LSTM(units=50, return_sequences=True,
+                                    recurrent_dropout=0.4))(embeddingCombined)  # variational biLSTM
+            mainLstmTwo = Bidirectional(LSTM(units=50, return_sequences=True,
+                                    recurrent_dropout=0.25))(mainLstmOne)  # variational biLSTM
+            mainLstmThree = Bidirectional(LSTM(units=50, return_sequences=True,
+                                    recurrent_dropout=0.25))(mainLstmTwo)  # variational biLSTM
+            
+            nn = TimeDistributed(Dense(50, activation="relu"))(mainLstmThree)  # a dense layer as suggested by neuralNer
             crf = CRF(nTags+1)  # CRF layer, n_tags+1(PAD)
             out = crf(nn)  # output
 
