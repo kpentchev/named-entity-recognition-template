@@ -3,13 +3,15 @@ import pickle
 from sklearn.model_selection import train_test_split
 from sklearn_crfsuite.metrics import flat_classification_report
 from keras.models import Model, Input
-from keras.layers import LSTM, Embedding, Dense, TimeDistributed, Dropout, Bidirectional, concatenate, SpatialDropout1D, Conv1D, Flatten, MaxPooling1D
+from keras.layers import LSTM, Embedding, Dense, TimeDistributed, Dropout, Bidirectional, concatenate, SpatialDropout1D, Permute, merge
 from keras_contrib.layers import CRF
 from keras_contrib.losses import crf_loss
 from keras_contrib.metrics import crf_viterbi_accuracy
 from keras.models import load_model
 
-class StemCharEmbLstmCrfModel(object):
+from AttentionWithContext import AttentionWithContext
+
+class StemCharLstmAttentionModel(object):
     """Class representing an Char Embedding + LSTM CRF Model for NER"""
     def __init__(self, nWords=0, nChars=0, nTags=0, lenEmdSent=0, lenEmdWord=0, maxLengthSentence=0, maxLengthWord=0):
         
@@ -26,33 +28,31 @@ class StemCharEmbLstmCrfModel(object):
             inputStems = Input(shape=(maxLengthSentence,))
             embeddingStems = Embedding(input_dim=nWords+2, output_dim=lenEmdSent, # n_words + 2 (PAD & UNK)
                             input_length=maxLengthSentence, mask_zero=True)(inputStems)  # default: 20-dim embedding
-            #stemsLstm = Bidirectional(LSTM(units=50, return_sequences=True,
-            #                        recurrent_dropout=0.5))(embeddingStems)
 
             inputChars = Input(shape=(maxLengthSentence, maxLengthWord,))
             embeddingChars = TimeDistributed(Embedding(input_dim=nChars + 2, output_dim=lenEmdWord, # n_chars + 2 (PAD & UNK)
-                            input_length=maxLengthWord, mask_zero=False))(inputChars)
-            #charLstm = TimeDistributed(Bidirectional(LSTM(units=30, return_sequences=False, recurrent_dropout=0.6)))(embeddingChars)
-
-            charDropout = Dropout(0.6)(embeddingChars)
-            charCnn = TimeDistributed(Conv1D(kernel_size=3, filters=30, padding='same', activation='tanh', strides=1))(charDropout)
-            maxpoolOut = TimeDistributed(MaxPooling1D(maxLengthWord), name="Maxpool")(charCnn)
-            charCnnOut = TimeDistributed(Flatten(), name="Flatten")(maxpoolOut)
-            charCnnOut = Dropout(0.6)(charCnnOut)
+                            input_length=maxLengthWord, mask_zero=True))(inputChars)
+            charLstm = TimeDistributed(Bidirectional(LSTM(units=30, return_sequences=False, recurrent_dropout=0.6)))(embeddingChars)
             
-            embeddingCombined = SpatialDropout1D(0.4)(concatenate([embeddingWords, embeddingStems, charCnnOut]))
+            embeddingCombined = SpatialDropout1D(0.3)(concatenate([embeddingWords, embeddingStems, charLstm]))
 
-            mainLstmOne = Bidirectional(LSTM(units=60, return_sequences=True,
-                                    recurrent_dropout=0.4))(embeddingCombined)  # variational biLSTM
-            mainLstmTwo = Bidirectional(LSTM(units=60, return_sequences=True,
-                                    recurrent_dropout=0.25))(mainLstmOne)  # variational biLSTM
+            a_nn = Dense(50, activation='softmax')(embeddingCombined)
+            a_probs = Permute((2, 1), name='attention_vec', )(a_nn)
+            attention = merge([embeddingCombined, a_probs], name='attention_mul', mode='mul')
 
-            nn = TimeDistributed(Dense(60, activation="relu"))(mainLstmTwo)  # a dense layer as suggested by neuralNer
-            crf = CRF(nTags+1)  # CRF layer, n_tags+1(PAD)
-            out = crf(nn)  # output
+            mainLstmOne = Bidirectional(LSTM(units=50, return_sequences=True,
+                                    recurrent_dropout=0.4))(attention)  # variational biLSTM
+
+            #print(mainLstmOne.shape)
+            #attention = TimeDistributed(AttentionWithContext())(mainLstmOne)
+            #print(attention.shape)
+
+            #nn = TimeDistributed(Dense(50, activation="relu"))(attention)  # a dense layer as suggested by neuralNer
+
+            out = TimeDistributed(Dense(nTags+1, activation="softmax"))(mainLstmOne)
 
             self.model = Model([inputWords, inputStems, inputChars], out)
-            self.model.compile(optimizer="nadam", loss=crf_loss, metrics=[crf_viterbi_accuracy]) #try adam optimizer
+            self.model.compile(optimizer="nadam", loss="categorical_crossentropy")
 
             self.model.summary()
 
@@ -119,7 +119,7 @@ class StemCharEmbLstmCrfModel(object):
 
 
 def restore(file):
-    instance = StemCharEmbLstmCrfModel()
+    instance = StemCharLstmAttentionModel()
     with open(file + '.params', 'rb') as handle:
         params = pickle.load(handle)
         instance.maxLengthSentence = params[0]

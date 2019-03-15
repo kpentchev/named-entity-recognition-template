@@ -1,8 +1,5 @@
-from keras import backend as K
-from keras import initializers
-from keras import regularizers
-from keras import constraints
-from keras.layers import Layer
+from keras import backend as K, regularizers, constraints, initializers
+from keras.engine.topology import Layer
 
 
 def dot_product(x, kernel):
@@ -15,6 +12,7 @@ def dot_product(x, kernel):
     Returns:
     """
     if K.backend() == 'tensorflow':
+        # todo: check that this is correct
         return K.squeeze(K.dot(x, K.expand_dims(kernel)), axis=-1)
     else:
         return K.dot(x, kernel)
@@ -47,9 +45,11 @@ class AttentionWithContext(Layer):
     def __init__(self,
                  W_regularizer=None, u_regularizer=None, b_regularizer=None,
                  W_constraint=None, u_constraint=None, b_constraint=None,
-                 bias=True, **kwargs):
+                 bias=True,
+                 return_attention=False, **kwargs):
 
         self.supports_masking = True
+        self.return_attention = return_attention
         self.init = initializers.get('glorot_uniform')
 
         self.W_regularizer = regularizers.get(W_regularizer)
@@ -94,6 +94,7 @@ class AttentionWithContext(Layer):
             uit += self.b
 
         uit = K.tanh(uit)
+        # ait = K.dot(uit, self.u)
         ait = dot_product(uit, self.u)
 
         a = K.exp(ait)
@@ -110,10 +111,15 @@ class AttentionWithContext(Layer):
 
         a = K.expand_dims(a)
         weighted_input = x * a
-        return K.sum(weighted_input, axis=1)
+        result = K.sum(weighted_input, axis=1)
 
-    def get_output_shape_for(self, input_shape):
-        return input_shape[0], input_shape[-1]
+        if self.return_attention:
+            return [result, a]
+        return result
 
     def compute_output_shape(self, input_shape):
-        return input_shape[0], input_shape[-1]
+        if self.return_attention:
+            return [(input_shape[0], input_shape[-1]),
+                    (input_shape[0], input_shape[1])]
+        else:
+            return input_shape[0], input_shape[-1]
