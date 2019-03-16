@@ -42,12 +42,14 @@ class StemCharEmbLstmCrfModel(object):
             
             embeddingCombined = SpatialDropout1D(0.4)(concatenate([embeddingWords, embeddingStems, charCnnOut]))
 
-            mainLstmOne = Bidirectional(LSTM(units=60, return_sequences=True,
-                                    recurrent_dropout=0.4))(embeddingCombined)  # variational biLSTM
-            mainLstmTwo = Bidirectional(LSTM(units=60, return_sequences=True,
-                                    recurrent_dropout=0.25))(mainLstmOne)  # variational biLSTM
+            mainLstmOne = Bidirectional(LSTM(units=100, return_sequences=True,
+                                    recurrent_dropout=0.5))(embeddingCombined)  # variational biLSTM
+            mainLstmTwo = Bidirectional(LSTM(units=100, return_sequences=True,
+                                    recurrent_dropout=0.5))(mainLstmOne)  # variational biLSTM
+            mainLstmThree = Bidirectional(LSTM(units=100, return_sequences=True,
+                                    recurrent_dropout=0.2))(mainLstmTwo)  # variational biLSTM
 
-            nn = TimeDistributed(Dense(60, activation="relu"))(mainLstmTwo)  # a dense layer as suggested by neuralNer
+            nn = TimeDistributed(Dense(100, activation="relu"))(mainLstmThree)  # a dense layer as suggested by neuralNer
             crf = CRF(nTags+1)  # CRF layer, n_tags+1(PAD)
             out = crf(nn)  # output
 
@@ -60,6 +62,11 @@ class StemCharEmbLstmCrfModel(object):
         self.X_word_tr, self.X_word_te, self.y_tr, self.y_te = train_test_split(xWords, y, test_size=testSize, random_state=2018)
         self.X_stem_tr, self.X_stem_te, _, _ = train_test_split(xStems, y, test_size=testSize, random_state=2018)
         self.X_char_tr, self.X_char_te, _, _ = train_test_split(xChars, y, test_size=testSize, random_state=2018)
+        self.X_te = [
+                        self.X_word_te,
+                        self.X_stem_te,
+                        np.array(self.X_char_te).reshape(len(self.X_char_te), self.maxLengthSentence, self.maxLengthWord)
+                    ]
 
         self.history = self.model.fit(
                                     [
@@ -70,14 +77,11 @@ class StemCharEmbLstmCrfModel(object):
                                     np.array(self.y_tr),
                                     batch_size=batchSize, 
                                     epochs=epochs,
-                                    validation_split=testSize,
+                                    validation_data=(self.X_te, np.array(self.y_te)),
                                     verbose=2)
 
     def evaluate(self, wordIndex, idx2tag):
-        pred_cat = self.model.predict([
-                                self.X_word_te,
-                                self.X_stem_te,
-                                np.array(self.X_char_te).reshape(len(self.X_char_te), self.maxLengthSentence, self.maxLengthWord)])
+        pred_cat = self.model.predict(self.X_te)
         pred = np.argmax(pred_cat, axis=-1)
         y_te_true = np.argmax(self.y_te, -1)
 
