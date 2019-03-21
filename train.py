@@ -31,15 +31,15 @@ if tf.test.is_gpu_available():
 else:
     BATCH_SIZE = 32
     EPOCHS = 12
-    MAX_LEN = 60
+    MAX_LEN = 75
     MAX_LEN_CHARS = 15
     EMBEDDING = 50
     EMBEDDING_WORD = 30
 
 
 #data = pd.read_csv("/Users/kpentchev/Downloads/ner_dataset.csv", encoding="latin1")
-#data = pd.read_csv("/Users/kpentchev/data/ner_2019_03_11_no_med.csv", encoding="utf-8", delimiter='\t')
-data = pd.read_csv("/home/kpentchev/data/floyd/ner_2019_03_11_no_med.csv", encoding="utf-8", delimiter='\t')
+data = pd.read_csv("/Users/kpentchev/data/ner_2019_03_11_no_med_no_eve.csv", encoding="utf-8", delimiter='\t')
+#data = pd.read_csv("/home/kpentchev/data/floyd/ner_2019_03_11_no_med.csv", encoding="utf-8", delimiter='\t')
 data = data.fillna(method="ffill")
 
 print("Number of sentences: ", len(data.groupby(['Sentence #'])))

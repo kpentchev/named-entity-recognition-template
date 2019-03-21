@@ -4,6 +4,7 @@ from sklearn.model_selection import train_test_split
 from sklearn_crfsuite.metrics import flat_classification_report
 from keras.models import Model, Input
 from keras.layers import LSTM, Embedding, Dense, TimeDistributed, Dropout, Bidirectional, concatenate, SpatialDropout1D, Conv1D, Flatten, MaxPooling1D
+from keras.callbacks import EarlyStopping
 from keras_contrib.layers import CRF
 from keras_contrib.losses import crf_loss
 from keras_contrib.metrics import crf_viterbi_accuracy
@@ -34,7 +35,7 @@ class StemCharEmbLstmCrfModel(object):
                             input_length=maxLengthWord, mask_zero=False))(inputChars)
             #charLstm = TimeDistributed(Bidirectional(LSTM(units=30, return_sequences=False, recurrent_dropout=0.6)))(embeddingChars)
 
-            charDropout = Dropout(0.6)(embeddingChars)
+            charDropout = Dropout(0.5)(embeddingChars)
             charCnn = TimeDistributed(Conv1D(kernel_size=3, filters=30, padding='same', activation='tanh', strides=1))(charDropout)
             maxpoolOut = TimeDistributed(MaxPooling1D(maxLengthWord), name="Maxpool")(charCnn)
             charCnnOut = TimeDistributed(Flatten(), name="Flatten")(maxpoolOut)
@@ -42,14 +43,12 @@ class StemCharEmbLstmCrfModel(object):
             
             embeddingCombined = SpatialDropout1D(0.4)(concatenate([embeddingWords, embeddingStems, charCnnOut]))
 
-            mainLstmOne = Bidirectional(LSTM(units=100, return_sequences=True,
+            mainLstmOne = Bidirectional(LSTM(units=70, return_sequences=True,
                                     recurrent_dropout=0.5))(embeddingCombined)  # variational biLSTM
-            mainLstmTwo = Bidirectional(LSTM(units=100, return_sequences=True,
-                                    recurrent_dropout=0.5))(mainLstmOne)  # variational biLSTM
-            mainLstmThree = Bidirectional(LSTM(units=100, return_sequences=True,
-                                    recurrent_dropout=0.2))(mainLstmTwo)  # variational biLSTM
+            mainLstmTwo = Bidirectional(LSTM(units=70, return_sequences=True,
+                                    recurrent_dropout=0.25))(mainLstmOne)
 
-            nn = TimeDistributed(Dense(100, activation="relu"))(mainLstmThree)  # a dense layer as suggested by neuralNer
+            nn = TimeDistributed(Dense(70, activation="relu"))(mainLstmTwo)  # a dense layer as suggested by neuralNer
             crf = CRF(nTags+1)  # CRF layer, n_tags+1(PAD)
             out = crf(nn)  # output
 
@@ -68,6 +67,8 @@ class StemCharEmbLstmCrfModel(object):
                         np.array(self.X_char_te).reshape(len(self.X_char_te), self.maxLengthSentence, self.maxLengthWord)
                     ]
 
+        early_stopping = EarlyStopping(monitor='loss', min_delta=0.0030, patience=2, verbose=1)
+
         self.history = self.model.fit(
                                     [
                                         self.X_word_tr,
@@ -78,9 +79,13 @@ class StemCharEmbLstmCrfModel(object):
                                     batch_size=batchSize, 
                                     epochs=epochs,
                                     validation_data=(self.X_te, np.array(self.y_te)),
+                                    callbacks=[early_stopping],
                                     verbose=2)
 
     def evaluate(self, wordIndex, idx2tag):
+        if len(self.X_te[0]) == 0:
+            return
+
         pred_cat = self.model.predict(self.X_te)
         pred = np.argmax(pred_cat, axis=-1)
         y_te_true = np.argmax(self.y_te, -1)
