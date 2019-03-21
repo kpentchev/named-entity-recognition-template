@@ -35,6 +35,9 @@ class StemCharLstmCrfModel(NerModel):
 
         self.charIndex = WordIndex("UNK")
 
+        #lazy init model after preprocessing training data
+        #word sizes 10% +, chars, tags exact
+
         if (nWords > 0 and nTags > 0 and nChars > 0):
             self.maxLengthSentence = maxLengthSentence
             self.maxLengthWord = maxLengthWord
