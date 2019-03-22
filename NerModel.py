@@ -28,11 +28,13 @@ class NerModel(object):
         state = self.__dict__.copy()
         # Don't pickle baz
         del state["model"]
+        del state["history"]
         return state
 
     def __setstate__(self, state):
         self.__dict__.update(state)
         self.model = None
+
 
 def restore(file):
     instance = None

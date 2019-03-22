@@ -167,11 +167,20 @@ class StemCharLstmCrfModel(NerModel):
         print(report)
 
     def predict(self, sentence):
-        #todo preprocess sentence
-        p = self.model.predict([
-                            np.array([inputWords[0]]),
-                            np.array([inputStems[0]]),
-                            np.array(inputChars[0]).reshape(1, self.maxLengthSentence, self.maxLengthWord)
+        words = nltk.pos_tag(nltk.word_tokenize(sentence))
+        encodedInput = encodeSentences([words], self.wordIndex)
+        encodedInput = pad(encodedInput, self.maxLengthSentence, self.wordIndex.getPadIdx())
+
+        encodedStems = encodeStems([[w[0] for w in words]], self.stemIndex, self.stemmer)
+        encodedStems = pad(encodedStems, self.maxLengthSentence, self.stemIndex.getPadIdx())
+
+        encodedChars = encodeChars([words], self.charIndex, self.maxLengthSentence, self.maxLengthWord)
+
+
+        prediction = self.model.predict([
+                            np.array([encodedInput[0]]),
+                            np.array([encodedStems[0]]),
+                            np.array(encodedChars[0]).reshape(1, self.maxLengthSentence, self.maxLengthWord)
                         ])
-        p = np.argmax(p, axis=-1)
-        return p
+        prediction = np.argmax(prediction, axis=-1)
+        return zip(words, [self.tagIndex.getWord(p) for p in prediction[0]])
