@@ -99,7 +99,7 @@ class StemCharLstmCrfModel(NerModel):
         self.nTags = len(tags)
         print("Number of Tags: ", self.nTags)
 
-        if self.wordIndex == None:
+        if self.model == None:
             self.wordIndex = WordIndex("UNK", self.nWords)
             self.stemIndex = WordIndex("UNK", self.nWords)
             self.tagIndex = WordIndex("O", self.nTags+2)
