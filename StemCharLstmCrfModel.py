@@ -45,7 +45,8 @@ class StemCharLstmCrfModel(NerModel):
 
     def train(self, data, batch_size, n_epochs, test_size=0.1):
         x_words_enc, x_stem_enc, x_char_enc, y_enc = self.__preprocess(data)
-        self.__init_model()
+        if self.model == None:
+            self.__init_model()
         return self.__train(x_words_enc, x_stem_enc, x_char_enc, y_enc, batch_size, n_epochs, test_size)
 
     def __init_model(self):
