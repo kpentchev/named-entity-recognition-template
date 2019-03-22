@@ -13,7 +13,7 @@ EMBEDDING_WORD = 30
 
 
 #data = pd.read_csv("/Users/kpentchev/data/teo_tagged_3_fixed.csv", encoding="utf-8", delimiter='\t')
-data = pd.read_csv("/Users/kpentchev/data/ner_2019_03_11_no_med_no_eve.csv", encoding="utf-8", delimiter='\t')
+data = pd.read_csv("/Users/kpentchev/data/ner_2019_03_22_fixed.csv", encoding="utf-8", delimiter='\t')
 #data = pd.read_csv("/home/kpentchev/data/floyd/ner_2019_03_11_no_med.csv", encoding="utf-8", delimiter='\t')
 #data = pd.read_csv("/home/kpentchev/data/floyd/teo_tagged_2019_02_11.csv", encoding="utf-8", delimiter='\t')
 data = data.fillna(method="ffill")

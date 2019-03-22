@@ -24,7 +24,14 @@ urlpages = [
     #'https://esportsobserver.com/esl-paysafecard-through-2019/',
     #'https://esportsobserver.com/hyperx-pittsburgh-knights-partner/',
     #'https://esportsobserver.com/psg-mobile-legends-team/'
-    'https://www.forbes.com/sites/mattperez/2019/02/26/g2-esports-raises-17-3-million-in-series-a-funding'
+    #'https://www.forbes.com/sites/mattperez/2019/02/26/g2-esports-raises-17-3-million-in-series-a-funding',
+    #'https://esportsobserver.com/rainbow-six-pro-league-rev-sharing/',
+    #'https://esportsobserver.com/nissan-faze-clan-optic-gaming/',
+    #'https://esportsobserver.com/csgo-pro-league-france/',
+    #'https://esportsobserver.com/t1-faceit-apex-legends/',
+    'https://esportsobserver.com/aquilini-funding-luminosity-gaming/',
+    'https://www.forbes.com/sites/mikeozanian/2018/10/23/the-worlds-most-valuable-esports-companies-1/#48a2b6a06a6e',
+    'https://www.forbes.com/sites/forbessanfranciscocouncil/2019/03/11/five-esports-predictions-what-does-the-year-hold-for-companies-and-developers/#18d3edde395b'
     ]
 
 rows = []
@@ -35,9 +42,9 @@ for urlpage in urlpages:
     soup.prettify('UTF-8')
     #print(soup)
     
-    text = ' '.join( x.getText() for x in soup.find('div', {'class': 'article-container'}).find_all('p'))
-    #text = ' '.join( x.getText() for x in soup.find('div', {'class': 'entry-content'}).find_all('p'))
-    text = text.replace('“', '"').replace('”', '"').replace("‘", "'").replace("’", "'").replace("…", "...").replace("–", "-")
+    #text = ' '.join( x.getText() for x in soup.find('div', {'class': 'article-container'}).find_all('p'))
+    text = ' '.join( x.getText() for x in soup.find('div', {'class': 'entry-content'}).find_all('p'))
+    #text = text.replace('“', '"').replace('”', '"').replace("‘", "'").replace("’", "'").replace("…", "...").replace("–", "-")
     #print(text)
 
     sentences = tokenizer.tokenize(text)

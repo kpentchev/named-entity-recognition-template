@@ -139,7 +139,7 @@ class StemCharLstmCrfModel(NerModel):
                         np.array(self.X_char_te).reshape(len(self.X_char_te), self.maxLengthSentence, self.maxLengthWord)
                     ]
 
-        early_stopping = EarlyStopping(monitor='loss', min_delta=0.0030, patience=2, verbose=1)
+        early_stopping = EarlyStopping(monitor='loss', min_delta=0.0050, patience=2, verbose=1)
 
         self.history = self.model.fit(
                                     [

@@ -10,7 +10,7 @@ class NerModel(object):
         self.model = None
         self.params = {}
 
-    def train(self, x_input, y_input, batch_size, n_epochs, test_size=0.1):
+    def train(self, data, batch_size, n_epochs, test_size=0.1):
         raise NotImplementedError( "Model is an abstract class; method not implemented" )
 
     def evaluate(self):

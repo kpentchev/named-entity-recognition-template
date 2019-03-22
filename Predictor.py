@@ -12,7 +12,7 @@ class Predictor(object):
         download('averaged_perceptron_tagger')
         download('stopwords')
 
-        self.model = restore('/Users/kpentchev/data/models/2019_03_22_12_31_stem_char_lstm_crf.h5')
+        self.model = restore('/Users/kpentchev/data/models/2019_03_22_16_38_stem_char_lstm_crf.h5')
         self.graph = tf.get_default_graph()
 
     def predict(self, text):
