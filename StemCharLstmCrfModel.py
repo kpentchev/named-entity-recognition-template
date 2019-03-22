@@ -22,7 +22,7 @@ from tqdm import tqdm
 
 class StemCharLstmCrfModel(NerModel):
     """Class representing an Char Embedding + LSTM CRF Model for NER"""
-    def __init__(self, nWords=0, nChars=0, nTags=0, lenEmdSent=0, lenEmdWord=0, maxLengthSentence=0, maxLengthWord=0):
+    def __init__(self, dimSentenceEmbedding=0, dimWordEmbedding=0, maxLengthSentence=0, maxLengthWord=0):
         super().__init__()
 
         nltk.download('stopwords')
@@ -35,33 +35,37 @@ class StemCharLstmCrfModel(NerModel):
 
         self.charIndex = WordIndex("UNK")
 
+        self.maxLengthSentence = maxLengthSentence
+        self.maxLengthWord = maxLengthWord
+        self.dimSentenceEmbedding = dimSentenceEmbedding
+        self.dimWordEmbedding = dimWordEmbedding
+
         #lazy init model after preprocessing training data
         #word sizes 10% +, chars, tags exact
 
-        if (nWords > 0 and nTags > 0 and nChars > 0):
-            self.maxLengthSentence = maxLengthSentence
-            self.maxLengthWord = maxLengthWord
-            self.nWords = nWords
-            self.nChars = nChars
-            self.nTags = nTags
-            
+    def train(self, data, batch_size, n_epochs, test_size=0.1):
+        x_words_enc, x_stem_enc, x_char_enc, y_enc = self.__preprocess(data)
+        self.__init_model()
+        return self.__train(x_words_enc, x_stem_enc, x_char_enc, y_enc, batch_size, n_epochs, test_size)
 
+    def __init_model(self):
+        if (self.nWords > 0 and self.nTags > 0 and self.nChars > 0):
             # Model definition
-            inputWords = Input(shape=(maxLengthSentence,))
-            embeddingWords = Embedding(input_dim=nWords+2, output_dim=lenEmdSent, # n_words + 2 (PAD & UNK)
-                            input_length=maxLengthSentence, mask_zero=True)(inputWords)  # default: 20-dim embedding
+            inputWords = Input(shape=(self.maxLengthSentence,))
+            embeddingWords = Embedding(input_dim=self.nWords+2, output_dim=self.dimSentenceEmbedding, # n_words + 2 (PAD & UNK)
+                            input_length=self.maxLengthSentence, mask_zero=True)(inputWords)  # default: 20-dim embedding
 
-            inputStems = Input(shape=(maxLengthSentence,))
-            embeddingStems = Embedding(input_dim=nWords+2, output_dim=lenEmdSent, # n_words + 2 (PAD & UNK)
-                            input_length=maxLengthSentence, mask_zero=True)(inputStems)  # default: 20-dim embedding
+            inputStems = Input(shape=(self.maxLengthSentence,))
+            embeddingStems = Embedding(input_dim=self.nWords+2, output_dim=self.dimSentenceEmbedding, # n_words + 2 (PAD & UNK)
+                            input_length=self.maxLengthSentence, mask_zero=True)(inputStems)  # default: 20-dim embedding
 
-            inputChars = Input(shape=(maxLengthSentence, maxLengthWord,))
-            embeddingChars = TimeDistributed(Embedding(input_dim=nChars + 2, output_dim=lenEmdWord, # n_chars + 2 (PAD & UNK)
-                            input_length=maxLengthWord, mask_zero=False))(inputChars)
+            inputChars = Input(shape=(self.maxLengthSentence, self.maxLengthWord,))
+            embeddingChars = TimeDistributed(Embedding(input_dim=self.nChars + 2, output_dim=self.dimWordEmbedding, # n_chars + 2 (PAD & UNK)
+                            input_length=self.maxLengthWord, mask_zero=False))(inputChars)
 
             charDropout = Dropout(0.5)(embeddingChars)
             charCnn = TimeDistributed(Conv1D(kernel_size=3, filters=30, padding='same', activation='tanh', strides=1))(charDropout) #convolution over characters; faster than lstm
-            maxpoolOut = TimeDistributed(MaxPooling1D(maxLengthWord), name="Maxpool")(charCnn)
+            maxpoolOut = TimeDistributed(MaxPooling1D(self.maxLengthWord), name="Maxpool")(charCnn)
             charCnnOut = TimeDistributed(Flatten(), name="Flatten")(maxpoolOut)
             charCnnOut = Dropout(0.6)(charCnnOut)
             
@@ -73,7 +77,7 @@ class StemCharLstmCrfModel(NerModel):
                                     recurrent_dropout=0.25))(mainLstmOne)
 
             nn = TimeDistributed(Dense(70, activation="relu"))(mainLstmTwo)  # a dense layer as suggested by neuralNer
-            crf = CRF(nTags+1)  # CRF layer, n_tags+1(PAD)
+            crf = CRF(self.nTags+1)  # CRF layer, n_tags+1(PAD)
             out = crf(nn)  # output
 
             self.model = Model([inputWords, inputStems, inputChars], out)
@@ -81,27 +85,25 @@ class StemCharLstmCrfModel(NerModel):
 
             self.model.summary()
 
-    def train(self, data, batch_size, n_epochs, test_size=0.1):
-        x_words_enc, x_stem_enc, x_char_enc, y_enc = self.__preprocess(data)
-        return self.__train(x_words_enc, x_stem_enc, x_char_enc, y_enc, batch_size, n_epochs, test_size)
-
     def __preprocess(self, data):
         print("Number of sentences: ", len(data.groupby(['Sentence #'])))
 
         words = list(set(data["Word"].values))
-        n_words = len(words)
-        print("Number of words in the dataset: ", n_words)
+        self.nWords = len(words)
+        print("Number of words in the dataset: ", self.nWords)
+        self.nWords += int(self.nWords * 0.1)
 
         stemmer = SnowballStemmer("english", ignore_stopwords=True)
         stems = list(set(stemmer.stem(word) for word in tqdm(words)))
 
         chars = set([w_i for w in tqdm(words) for w_i in w])
         print(chars)
+        self.nChars = len(chars)
 
         tags = list(set(data["Tag"].values))
         print("Tags:", tags)
-        n_tags = len(tags)
-        print("Number of Tags: ", n_tags)
+        self.nTags = len(tags)
+        print("Number of Tags: ", self.nTags)
 
         self.wordIndex.add(words)
         self.stemIndex.add(stems)
@@ -120,7 +122,7 @@ class StemCharLstmCrfModel(NerModel):
 
         encodedTags = encodeTags(sentences, self.tagIndex)
         encodedTags = pad(encodedTags, self.maxLengthSentence, self.tagIndex.getPadIdx())
-        encodedTags = onehotEncodeTags(encodedTags, n_tags)
+        encodedTags = onehotEncodeTags(encodedTags, self.nTags)
 
         encodedChars = encodeChars(sentences, self.charIndex, self.maxLengthSentence, self.maxLengthWord)
 
