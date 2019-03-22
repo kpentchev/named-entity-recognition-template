@@ -27,13 +27,6 @@ class StemCharLstmCrfModel(NerModel):
 
         nltk.download('stopwords')
         self.stemmer = SnowballStemmer("english", ignore_stopwords=True)
-        self.wordIndex = WordIndex("UNK")
-
-        self.stemIndex = WordIndex("UNK")
-
-        self.tagIndex = WordIndex("O")
-
-        self.charIndex = WordIndex("UNK")
 
         self.maxLengthSentence = maxLengthSentence
         self.maxLengthWord = maxLengthWord
@@ -105,6 +98,12 @@ class StemCharLstmCrfModel(NerModel):
         print("Tags:", tags)
         self.nTags = len(tags)
         print("Number of Tags: ", self.nTags)
+
+        if self.wordIndex == None:
+            self.wordIndex = WordIndex("UNK", self.nWords)
+            self.stemIndex = WordIndex("UNK", self.nWords)
+            self.tagIndex = WordIndex("O", self.nTags+2)
+            self.charIndex = WordIndex("UNK", self.nChars+1)
 
         self.wordIndex.add(words)
         self.stemIndex.add(stems)

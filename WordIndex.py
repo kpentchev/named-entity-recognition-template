@@ -2,7 +2,7 @@ import pickle
 
 class WordIndex(object):
     """Class representing a dictionary"""
-    def __init__(self, unknown):
+    def __init__(self, unknown, maxLength=10000000):
         self.pad = "PAD"
         self.unknown = unknown
         self.dict = {}
@@ -14,12 +14,16 @@ class WordIndex(object):
         self.inverse[1] = self.unknown
 
         self.length = 2
+        self.maxLength = maxLength
 
     def getIdx(self, word):
         if (not word in self.dict):
-            self.dict[word] = self.length
-            self.inverse[self.length] = word
-            self.length += 1
+            if self.length < self.maxLength -1:
+                self.dict[word] = self.length
+                self.inverse[self.length] = word
+                self.length += 1
+            else:
+                return self.dict[self.unknown]
         return self.dict[word]
 
     def getWord(self, idx):
