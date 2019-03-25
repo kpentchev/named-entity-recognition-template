@@ -10,7 +10,7 @@ text = 'The ESL Mobile Open will begin its first season on March 18 and feature 
 
 sentences = nltk.sent_tokenize(text)
 
-model = restore('/Users/kpentchev/data/models/2019_03_22_12_31_stem_char_lstm_crf.h5')
+model = restore('/Users/kpentchev/data/models/2019_03_25_15_46_stem_char_lstm_crf.h5')
 
 for sentence in sentences:
     prediction = model.predict(sentence)

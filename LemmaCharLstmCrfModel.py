@@ -1,7 +1,7 @@
 from NerModel import NerModel
 from WordIndex import WordIndex
 from SentenceGetter import SentenceGetter
-from Preprocessor import encodeSentences, encodeStems, encodeChars, encodeTags, pad, onehotEncodeTags
+from Preprocessor import encodeSentences, encodeLemmas, encodeChars, encodeTags, pad, onehotEncodeTags
 
 from keras.models import Model, Input
 from keras.layers import LSTM, Embedding, Dense, TimeDistributed, Dropout, Bidirectional, concatenate, SpatialDropout1D, Conv1D, Flatten, MaxPooling1D
@@ -11,7 +11,7 @@ from keras_contrib.losses import crf_loss
 from keras_contrib.metrics import crf_viterbi_accuracy
 
 import nltk
-from nltk.stem.snowball import SnowballStemmer
+from nltk.stem import WordNetLemmatizer
 
 from sklearn.model_selection import train_test_split
 from sklearn_crfsuite.metrics import flat_classification_report
@@ -20,13 +20,13 @@ import numpy as np
 
 from tqdm import tqdm
 
-class StemCharLstmCrfModel(NerModel):
+class LemmaCharLstmCrfModel(NerModel):
     """Class representing an Char Embedding + LSTM CRF Model for NER"""
     def __init__(self, dimSentenceEmbedding=0, dimWordEmbedding=0, maxLengthSentence=0, maxLengthWord=0):
         super().__init__()
 
-        nltk.download('stopwords')
-        self.stemmer = SnowballStemmer("english", ignore_stopwords=True)
+        nltk.download('wordnet')
+        self.lemmatizer = WordNetLemmatizer()
 
         self.maxLengthSentence = maxLengthSentence
         self.maxLengthWord = maxLengthWord
@@ -37,10 +37,10 @@ class StemCharLstmCrfModel(NerModel):
         #word sizes 10% +, chars, tags exact
 
     def train(self, data, batch_size, n_epochs, test_size=0.1):
-        x_words_enc, x_stem_enc, x_char_enc, y_enc = self.__preprocess(data)
+        x_words_enc, x_lemma_enc, x_char_enc, y_enc = self.__preprocess(data)
         if self.model == None:
             self.__init_model()
-        return self.__train(x_words_enc, x_stem_enc, x_char_enc, y_enc, batch_size, n_epochs, test_size)
+        return self.__train(x_words_enc, x_lemma_enc, x_char_enc, y_enc, batch_size, n_epochs, test_size)
 
     def __init_model(self):
         if (self.nWords > 0 and self.nTags > 0 and self.nChars > 0):
@@ -49,9 +49,9 @@ class StemCharLstmCrfModel(NerModel):
             embeddingWords = Embedding(input_dim=self.nWords+2, output_dim=self.dimSentenceEmbedding, # n_words + 2 (PAD & UNK)
                             input_length=self.maxLengthSentence, mask_zero=True)(inputWords)  # default: 20-dim embedding
 
-            inputStems = Input(shape=(self.maxLengthSentence,))
-            embeddingStems = Embedding(input_dim=self.nWords+2, output_dim=self.dimSentenceEmbedding, # n_words + 2 (PAD & UNK)
-                            input_length=self.maxLengthSentence, mask_zero=True)(inputStems)  # default: 20-dim embedding
+            inputLemmas = Input(shape=(self.maxLengthSentence,))
+            embeddingLemmas = Embedding(input_dim=self.nWords+2, output_dim=self.dimSentenceEmbedding, # n_words + 2 (PAD & UNK)
+                            input_length=self.maxLengthSentence, mask_zero=True)(inputLemmas)  # default: 20-dim embedding
 
             inputChars = Input(shape=(self.maxLengthSentence, self.maxLengthWord,))
             embeddingChars = TimeDistributed(Embedding(input_dim=self.nChars + 2, output_dim=self.dimWordEmbedding, # n_chars + 2 (PAD & UNK)
@@ -63,7 +63,7 @@ class StemCharLstmCrfModel(NerModel):
             charCnnOut = TimeDistributed(Flatten(), name="Flatten")(maxpoolOut)
             charCnnOut = Dropout(0.6)(charCnnOut)
             
-            embeddingCombined = SpatialDropout1D(0.4)(concatenate([embeddingWords, embeddingStems, charCnnOut]))
+            embeddingCombined = SpatialDropout1D(0.4)(concatenate([embeddingWords, embeddingLemmas, charCnnOut]))
 
             mainLstmOne = Bidirectional(LSTM(units=70, return_sequences=True,
                                     recurrent_dropout=0.5))(embeddingCombined)  # variational biLSTM
@@ -74,7 +74,7 @@ class StemCharLstmCrfModel(NerModel):
             crf = CRF(self.nTags+1)  # CRF layer, n_tags+1(PAD)
             out = crf(nn)  # output
 
-            self.model = Model([inputWords, inputStems, inputChars], out)
+            self.model = Model([inputWords, inputLemmas, inputChars], out)
             self.model.compile(optimizer="nadam", loss=crf_loss, metrics=[crf_viterbi_accuracy]) #try adam optimizer
 
             self.model.summary()
@@ -87,8 +87,7 @@ class StemCharLstmCrfModel(NerModel):
         print("Number of words in the dataset: ", self.nWords)
         self.nWords += int(self.nWords * 0.1)
 
-        stemmer = SnowballStemmer("english", ignore_stopwords=True)
-        stems = list(set(stemmer.stem(word) for word in tqdm(words)))
+        lemmas = list(set(self.lemmatizer.lemmatize(word) for word in tqdm(words)))
 
         chars = set([w_i for w in tqdm(words) for w_i in w])
         print(chars)
@@ -101,12 +100,12 @@ class StemCharLstmCrfModel(NerModel):
 
         if self.model == None:
             self.wordIndex = WordIndex("UNK", self.nWords)
-            self.stemIndex = WordIndex("UNK", self.nWords)
+            self.lemmaIndex = WordIndex("UNK", self.nWords)
             self.tagIndex = WordIndex("O", self.nTags+2)
             self.charIndex = WordIndex("UNK", self.nChars+1)
 
         self.wordIndex.add(words)
-        self.stemIndex.add(stems)
+        self.lemmaIndex.add(lemmas)
         self.tagIndex.add(tags)
         self.charIndex.add(chars)
 
@@ -117,8 +116,8 @@ class StemCharLstmCrfModel(NerModel):
         encodedSentences = encodeSentences(sentences, self.wordIndex)
         encodedSentences = pad(encodedSentences, self.maxLengthSentence, self.wordIndex.getPadIdx())
 
-        encodedStems = encodeStems(sentences, self.stemIndex, stemmer)
-        encodedStems = pad(encodedStems, self.maxLengthSentence, self.stemIndex.getPadIdx())
+        encodedLemmas = encodeLemmas(sentences, self.lemmaIndex, self.lemmatizer)
+        encodedLemmas = pad(encodedLemmas, self.maxLengthSentence, self.lemmaIndex.getPadIdx())
 
         encodedTags = encodeTags(sentences, self.tagIndex)
         encodedTags = pad(encodedTags, self.maxLengthSentence, self.tagIndex.getPadIdx())
@@ -126,26 +125,24 @@ class StemCharLstmCrfModel(NerModel):
 
         encodedChars = encodeChars(sentences, self.charIndex, self.maxLengthSentence, self.maxLengthWord)
 
-        return  (encodedSentences, encodedStems, encodedChars, encodedTags)
+        return  (encodedSentences, encodedLemmas, encodedChars, encodedTags)
 
-    def __train(self, xWords, xStems, xChars, y, batchSize, epochs, testSize):
+    def __train(self, xWords, xLemmas, xChars, y, batchSize, epochs, testSize):
         self.X_word_tr, self.X_word_te, self.y_tr, self.y_te = train_test_split(xWords, y, test_size=testSize, random_state=2018)
-        self.X_stem_tr, self.X_stem_te, _, _ = train_test_split(xStems, y, test_size=testSize, random_state=2018)
+        self.X_lemma_tr, self.X_lemma_te, _, _ = train_test_split(xLemmas, y, test_size=testSize, random_state=2018)
         self.X_char_tr, self.X_char_te, _, _ = train_test_split(xChars, y, test_size=testSize, random_state=2018)
         self.X_te = [
                         self.X_word_te,
-                        self.X_stem_te,
+                        self.X_lemma_te,
                         np.array(self.X_char_te).reshape(len(self.X_char_te), self.maxLengthSentence, self.maxLengthWord)
                     ]
 
-        print(np.array(self.y_tr).shape)
-
-        early_stopping = EarlyStopping(monitor='loss', min_delta=0.0050, patience=2, verbose=1)
+        early_stopping = EarlyStopping(monitor='loss', min_delta=0.0040, patience=2, verbose=1)
 
         self.history = self.model.fit(
                                     [
                                         self.X_word_tr,
-                                        self.X_stem_tr,
+                                        self.X_lemma_tr,
                                         np.array(self.X_char_tr).reshape((len(self.X_char_tr), self.maxLengthSentence, self.maxLengthWord))
                                     ],
                                     np.array(self.y_tr),
@@ -175,15 +172,15 @@ class StemCharLstmCrfModel(NerModel):
         encodedInput = encodeSentences([words], self.wordIndex)
         encodedInput = pad(encodedInput, self.maxLengthSentence, self.wordIndex.getPadIdx())
 
-        encodedStems = encodeStems([[w[0] for w in words]], self.stemIndex, self.stemmer)
-        encodedStems = pad(encodedStems, self.maxLengthSentence, self.stemIndex.getPadIdx())
+        encodedLemmas = encodeLemmas([[[w[0], w[1]] for w in words]], self.lemmaIndex, self.lemmatizer)
+        encodedLemmas = pad(encodedLemmas, self.maxLengthSentence, self.lemmaIndex.getPadIdx())
 
         encodedChars = encodeChars([words], self.charIndex, self.maxLengthSentence, self.maxLengthWord)
 
 
         prediction = self.model.predict([
                             np.array([encodedInput[0]]),
-                            np.array([encodedStems[0]]),
+                            np.array([encodedLemmas[0]]),
                             np.array(encodedChars[0]).reshape(1, self.maxLengthSentence, self.maxLengthWord)
                         ])
         prediction = np.argmax(prediction, axis=-1)

@@ -2,6 +2,8 @@ import numpy as np
 import re
 from keras.preprocessing.sequence import pad_sequences
 from keras.utils import to_categorical
+from nltk.corpus import wordnet
+from tqdm import tqdm
 
 whitespaceMatch = re.compile(r'\s+')
 numberStem = '###NUM###'
@@ -20,7 +22,12 @@ def encodeSentences(sentences, word2idx):
 
 def encodeStems(sentences, stem2idx, stemmer):
     # Convert each sentence from list of Token to list of word_index
-    encoded = [[stem2idx.getIdx(numberStem if isNumber(w[0]) else stemmer.stem(w[0])) for w in s] for s in sentences]
+    encoded = [[stem2idx.getIdx(numberStem if isNumber(w[0]) else stemmer.stem(w[0])) for w in s] for s in tqdm(sentences)]
+    return encoded
+
+def encodeLemmas(sentences, lemma2idx, lemmatizer):
+    # Convert each sentence from list of Token to list of word_index
+    encoded = [[lemma2idx.getIdx(numberStem if isNumber(w[0]) else lemmatizer.lemmatize(w[0], __getWordnetPos(w[1]))) for w in s] for s in tqdm(sentences)]
     return encoded
 
 def encodeChars(sentences, charIndex, maxLengthSentence, maxLengthWord):
@@ -52,3 +59,15 @@ def onehotEncodeTags(tags, nTags):
     # One-Hot encode
     hotencoded = [to_categorical(i, num_classes=nTags+1) for i in tags]  # n_tags+1(PAD)
     return hotencoded
+
+def __getWordnetPos(treebank_tag):
+    if treebank_tag.startswith('J'):
+        return wordnet.ADJ
+    elif treebank_tag.startswith('V'):
+        return wordnet.VERB
+    elif treebank_tag.startswith('N'):
+        return wordnet.NOUN
+    elif treebank_tag.startswith('R'):
+        return wordnet.ADV
+    else:
+        return wordnet.NOUN
