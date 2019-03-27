@@ -1,12 +1,14 @@
 import flask
 from flask_cors import CORS
 from Predictor import Predictor
+from Linker import Linker
 
 app = flask.Flask(__name__)
 CORS(app)
 
 predictor = None
-    
+linker = None
+model_path = '/Users/kpentchev/data/models/2019_03_26_03_06_stem_char_lstm_crf.h5'
 
 @app.route("/predict", methods=["POST"])
 def predict():
@@ -17,8 +19,6 @@ def predict():
     if flask.request.method == "POST":
         request_data = flask.request.get_json()
         text = request_data['text']
-
-        
 
         data["text"] = text
         data["predictions"] = []
@@ -38,6 +38,11 @@ def predict():
                     })
                 else :
                     data["predictions"][-1]["end"] = last_idx
+                
+        for pred in data["predictions"]:
+            start_idx = pred["start"]
+            end_idx = pred["end"]
+            pred["meta"] = linker.getLink(text[start_idx:end_idx] ,pred["type"])
 
         # indicate that the request was a success
         data["success"] = True
@@ -45,10 +50,13 @@ def predict():
 	# return the data dictionary as a JSON response
     return flask.jsonify(data)
 
+
 # if this is the main thread of execution first load the model and
 # then start the server
 if __name__ == "__main__":
-	print(("* Loading Keras model and Flask starting server..."
-		"please wait until server has fully started"))
-	predictor = Predictor()
-	app.run()
+    print(("* Loading Keras model and Flask starting server..."
+    "please wait until server has fully started"))
+    
+    predictor = Predictor(model_path)
+    linker = Linker('bolt://localhost', 'neo4j', 'ubiime')
+    app.run()
