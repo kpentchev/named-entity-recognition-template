@@ -1,0 +1,12 @@
+keras
+git+https://www.github.com/keras-team/keras-contrib.git
+tensorflow
+flask
+flask_cors
+requests
+nltk
+sklearn
+sklearn-crfsuite
+numpy
+tqdm
+neo4j
