@@ -8,7 +8,7 @@ CORS(app)
 
 predictor = None
 linker = None
-model_path = '/Users/kpentchev/data/models/2019_03_26_03_06_stem_char_lstm_crf.h5'
+model_path = '/Users/kpentchev/data/models/2019_03_27_18_23_stem_char_lstm_crf.h5'
 
 @app.route("/predict", methods=["POST"])
 def predict():
@@ -58,5 +58,5 @@ if __name__ == "__main__":
     "please wait until server has fully started"))
     
     predictor = Predictor(model_path)
-    linker = Linker('bolt://localhost', 'neo4j', 'ubiime')
+    linker = Linker('bolt://46.101.121.174', 'neo4j', 'get_r1ght')
     app.run()
