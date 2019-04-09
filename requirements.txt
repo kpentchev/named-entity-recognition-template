@@ -10,3 +10,4 @@ sklearn-crfsuite
 numpy
 tqdm
 neo4j
+gunicorn

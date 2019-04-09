@@ -12,6 +12,8 @@ class Predictor(object):
         download('averaged_perceptron_tagger')
         download('stopwords')
 
+        print("Loading model {}".format(model_path))
+
         self.model = restore(model_path)
         self.graph = tf.get_default_graph()
 

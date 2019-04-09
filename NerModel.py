@@ -3,7 +3,6 @@ from keras.models import load_model
 from keras_contrib.layers import CRF
 from keras_contrib.losses import crf_loss
 from keras_contrib.metrics import crf_viterbi_accuracy
-from ElmoEmbedding import ElmoEmbedding
 
 class NerModel(object):
     """Class representing an abstract model"""
@@ -42,7 +41,6 @@ def restore(file):
     with open(file + '.params', 'rb') as handle:
         instance = pickle.load(handle)
         instance.model = load_model(file, custom_objects={
-            'ElmoEmbedding': ElmoEmbedding,
             'CRF': CRF, 
             'crf_loss': crf_loss, 
             'crf_viterbi_accuracy': crf_viterbi_accuracy
