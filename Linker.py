@@ -11,16 +11,6 @@ class Linker(object):
             'mon': _linkMoney
         }
 
-        self._ner2query2 = {
-            'geo': None,
-            'gam': 'CALL db.index.fulltext.queryNodes("labelIdx", "\'{}\'") YIELD node, score MATCH (g:Game) -[:HAS_LABEL]-> (node) RETURN g, MAX(score) as s ORDER BY s DESC',
-            'tea': 'Team',
-            'tou': 'Tournament',
-            'org': None,
-            'tim': None,
-            'mon': None
-        }
-
     def getLink(self, text, etype):
         if etype in self._ner2link:
             con = self._driver.session()
@@ -36,7 +26,16 @@ class Linker(object):
         self._driver.close()
 
 def _linkGame(con, text):
-    result = con.run('CALL db.index.fulltext.queryNodes("labelIdx", "\'{}\'") YIELD node, score MATCH (game:Game) -[:HAS_LABEL]-> (node) RETURN game, MAX(score) as s ORDER BY s DESC'.format(text))
+    '''
+    CALL db.index.fulltext.queryNodes("labelIdx", "\'CS\\:GO\'") YIELD node, score 
+MATCH (g:Game) -[:HAS_LABEL]-> (node)
+MATCH (t:Tournament) -[r:COMPETITION_FOR] -> (g) 
+WHERE t.date > '2017-12-31' AND t.date < '2019-01-01'
+MATCH (p:Player) -[tp:TournamentParticipation]-> (t) 
+RETURN g, SUM(tp.earning), COUNT(distinct p), MAX(score) as s ORDER BY s DESC
+'''
+    queryTemplate = 'CALL db.index.fulltext.queryNodes("labelIdx", "\'{}\'") YIELD node, score MATCH (game:Game) -[:HAS_LABEL]-> (node) RETURN game, MAX(score) as s ORDER BY s DESC'
+    result = con.run(queryTemplate.format(text.replace(':', '\\:')))
     rec = result.single()['game']
     return {
         'name': rec['name'],
