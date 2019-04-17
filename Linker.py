@@ -25,21 +25,35 @@ class Linker(object):
         print("Closing neo4j driver...")
         self._driver.close()
 
-def _linkGame(con, text):
-    '''
-    CALL db.index.fulltext.queryNodes("labelIdx", "\'CS\\:GO\'") YIELD node, score 
+'''
+CALL db.index.fulltext.queryNodes("labelIdx", "\'CS\\:GO\'") YIELD node, score 
 MATCH (g:Game) -[:HAS_LABEL]-> (node)
 MATCH (t:Tournament) -[r:COMPETITION_FOR] -> (g) 
 WHERE t.date > '2017-12-31' AND t.date < '2019-01-01'
 MATCH (p:Player) -[tp:TournamentParticipation]-> (t) 
-RETURN g, SUM(tp.earning), COUNT(distinct p), MAX(score) as s ORDER BY s DESC
+RETURN g, SUM(tp.earning) AS prize_money, COUNT(distinct p) AS num_players, COUNT(distinct t) AS num_tournaments, MAX(score) AS s ORDER BY s DESC
 '''
-    queryTemplate = 'CALL db.index.fulltext.queryNodes("labelIdx", "\'{}\'") YIELD node, score MATCH (game:Game) -[:HAS_LABEL]-> (node) RETURN game, MAX(score) as s ORDER BY s DESC'
+def _linkGame(con, text):
+    queryTemplate = '''
+                    CALL db.index.fulltext.queryNodes("labelIdx", "\'{}\'") YIELD node, score
+                    MATCH (g:Game) -[:HAS_LABEL]-> (node)
+                    MATCH (t:Tournament) -[r:COMPETITION_FOR] -> (g)
+                    MATCH (p:Player) -[tp:TournamentParticipation]-> (t)
+                    RETURN g, SUM(tp.earning) AS prize_money, COUNT(distinct p) AS num_players, COUNT(distinct t) AS num_tournaments, MAX(score) AS s ORDER BY s DESC
+                    '''
+
     result = con.run(queryTemplate.format(text.replace(':', '\\:')))
-    rec = result.single()['game']
+    row = result.single()
+    game = row['game']
+    prize_money = row['prize_money']
+    num_players = row['num_players']
+    num_tournaments = row['num_tournaments']
     return {
-        'name': rec['name'],
-        'synonyms': rec['altNames']
+        'name': game['name'],
+        'synonyms': game['altNames'],
+        'prize_money': prize_money,
+        'num_players': num_players,
+        'num_tournaments': num_tournaments
     }
 
 def _linkMoney(con, text):
