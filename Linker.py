@@ -1,4 +1,5 @@
 from neo4j import GraphDatabase
+import sys
 
 class Linker(object):
 
@@ -21,6 +22,9 @@ class Linker(object):
             else:
                 return {}
         except:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
+            print(''.join(lines))
             return {}
 
 
@@ -42,10 +46,10 @@ def _linkGame(con, text):
                     MATCH (g:Game) -[:HAS_LABEL]-> (node)
                     MATCH (t:Tournament) -[r:COMPETITION_FOR] -> (g)
                     MATCH (p:Player) -[tp:TournamentParticipation]-> (t)
-                    RETURN g, SUM(tp.earning) AS prize_money, COUNT(distinct p) AS num_players, COUNT(distinct t) AS num_tournaments, MAX(score) AS s ORDER BY s DESC
+                    RETURN g AS game, SUM(tp.earning) AS prize_money, COUNT(distinct p) AS num_players, COUNT(distinct t) AS num_tournaments, MAX(score) AS s ORDER BY s DESC
                     '''
 
-    result = con.run(queryTemplate.format(text.replace(':', '\\:')))
+    result = con.run(queryTemplate.format(text.replace(':', '\\\\:')))
     row = result.single()
     game = row['game']
     prize_money = row['prize_money']
