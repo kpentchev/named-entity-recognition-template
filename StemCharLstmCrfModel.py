@@ -65,12 +65,14 @@ class StemCharLstmCrfModel(NerModel):
             
             embeddingCombined = SpatialDropout1D(0.4)(concatenate([embeddingWords, embeddingStems, charCnnOut]))
 
-            mainLstmOne = Bidirectional(LSTM(units=70, return_sequences=True,
+            mainLstmOne = Bidirectional(LSTM(units=65, return_sequences=True,
                                     recurrent_dropout=0.5))(embeddingCombined)  # variational biLSTM
-            mainLstmTwo = Bidirectional(LSTM(units=70, return_sequences=True,
+            mainLstmTwo = Bidirectional(LSTM(units=65, return_sequences=True,
                                     recurrent_dropout=0.25))(mainLstmOne)
+            mainLstmThree = Bidirectional(LSTM(units=35, return_sequences=True,
+                                    recurrent_dropout=0.25))(mainLstmTwo)
 
-            nn = TimeDistributed(Dense(70, activation="relu"))(mainLstmTwo)  # a dense layer as suggested by neuralNer
+            nn = TimeDistributed(Dense(70, activation="relu"))(mainLstmThree)  # a dense layer as suggested by neuralNer
             crf = CRF(self.nTags+1)  # CRF layer, n_tags+1(PAD)
             out = crf(nn)  # output
 
@@ -140,7 +142,7 @@ class StemCharLstmCrfModel(NerModel):
 
         print(np.array(self.y_tr).shape)
 
-        early_stopping = EarlyStopping(monitor='loss', min_delta=0.0050, patience=2, verbose=1)
+        early_stopping = EarlyStopping(monitor='crf_viterbi_accuracy', min_delta=0.0015, patience=2, verbose=1, restore_best_weights=True)
 
         self.history = self.model.fit(
                                     [

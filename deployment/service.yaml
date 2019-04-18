@@ -31,13 +31,13 @@ spec:
     spec:
       containers:
       - name: esports-ner-service
-        image: kpentchev/esports-ner-service
+        image: kpentchev/esports-ner-service:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 5000
         resources:
           requests:
-            cpu: "1.0"
+            cpu: "0.2"
             memory: 1.5Gi
         readinessProbe:
           httpGet:

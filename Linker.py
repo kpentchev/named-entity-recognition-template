@@ -22,12 +22,15 @@ class Linker(object):
         }
 
     def getLink(self, text, etype):
-        if etype in self._ner2link:
-            con = self._driver.session()
+        try:
+            if etype in self._ner2link:
+                con = self._driver.session()
 
-            link_fun = self._ner2link[etype]
-            return link_fun(con, text)
-        else:
+                link_fun = self._ner2link[etype]
+                return link_fun(con, text)
+            else:
+                return {}
+        except:
             return {}
 
 
